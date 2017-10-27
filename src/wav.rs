@@ -113,6 +113,7 @@ impl WAV {
     }
 }
 
+#[derive(Debug)]
 pub enum Sample {
     StereoF64 { l: f64, r: f64 },
     StereoI16 { l: i16, r: i16 },
