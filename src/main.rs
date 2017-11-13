@@ -5,18 +5,35 @@ use std::fs::File;
 mod wav;
 use wav::*;
 
+macro_rules! pipe {
+    ( $e1:expr, $e2:expr ) => {
+        Pipe::new($e1, $e2);
+    };
+    ( $e1:expr, $e2:expr, $( $e:expr ),* ) => {{
+        let p = Pipe::new($e1, $e2);
+        $(
+            let p = Pipe::new(p, $e);
+        )*
+        p
+    }}
+}
+
 fn main() {
+    let source = StaticSource::new("test85.wav");
+    let ident: Ident<Sample> = Ident::new();
+    let ident2: Ident<Sample> = Ident::new();
+    let sink = PrintSink::new();
+
+    let p = pipe!(source, ident, ident2, sink);
+
+    p.start();
+}
+
+fn _test() {
     let sdl_context = sdl2::init().unwrap();
     let audio_subsystem = sdl_context.audio().unwrap();
 
-    let source = StaticSource::new();
-    let ident: Ident<Sample> = Ident::new();
-    let sink = PrintSink::new();
-
-    let p = Pipe::new(source, ident);
-    let mut p = Pipe::new(p, sink);
-
-    let mut ss = StaticSource::new();
+    let mut ss = StaticSource::new("test85.wav");
     let mut s = SDL2Sink::new(audio_subsystem, move || {
         let sm = ss.next(()).to_float();
         match sm {
@@ -25,36 +42,8 @@ fn main() {
             _ => panic!(),
         }
     });
+
     s.start();
-
-    loop {
-        p.next(());
-    }
-}
-
-struct Pipe<A, B> {
-    a: A,
-    b: B,
-}
-impl<A, B> Pipe<A, B> {
-    fn new(a: A, b: B) -> Self {
-        Self {a: a, b: b}
-    }
-}
-
-impl<A, B> Element for Pipe<A, B>
-where A: Element,
-      B: Element,
-      A::Src: Into<B::Sink> {
-    type Sink = A::Sink;
-    type Src = B::Src;
-    fn next(&mut self, sink: Self::Sink) -> Self::Src {
-        self.b.next(self.a.next(sink).into())
-    }
-    fn settings() -> Settings {
-        Settings {
-        }
-    }
 }
 
 struct StaticSource {
@@ -62,8 +51,8 @@ struct StaticSource {
     pos: usize,
 }
 impl StaticSource {
-    fn new() -> Self {
-        let file = File::open("test85.wav").unwrap();
+    fn new(filename: &str) -> Self {
+        let file = File::open(filename).unwrap();
         let wav = WAV::new(file);
         Self {
             wav: wav,
@@ -78,10 +67,6 @@ impl Element for StaticSource {
         self.pos += 1;
         self.wav.get_sample(self.pos - 1).unwrap()
     }
-    fn settings() -> Settings {
-        Settings {
-        }
-    }
 }
 
 struct Ident<T> {t: std::marker::PhantomData<T>}
@@ -95,10 +80,6 @@ impl<T> Element for Ident<T> {
     type Src = T;
     fn next(&mut self, sink: Self::Sink) -> Self::Src {
         sink
-    }
-    fn settings() -> Settings {
-        Settings {
-        }
     }
 }
 
@@ -150,19 +131,44 @@ impl Element for PrintSink {
     fn next(&mut self, sink: Self::Sink) -> Self::Src {
         println!("{:?}", sink);
     }
-    fn settings() -> Settings {
-        Settings {
-        }
-    }
 }
 
+// Core
 
-struct Settings {
-}
 trait Element {
     type Sink;
     type Src;
     fn next(&mut self, sink: Self::Sink) -> Self::Src;
-    fn settings() -> Settings;
+}
+trait Pipeline {
+    fn start(self);
+}
+
+struct Pipe<A, B> {
+    a: A,
+    b: B,
+}
+impl<A, B> Pipe<A, B> {
+    fn new(a: A, b: B) -> Self {
+        Self {a: a, b: b}
+    }
+}
+impl<A, B> Element for Pipe<A, B>
+where A: Element,
+      B: Element,
+      A::Src: Into<B::Sink> {
+    type Sink = A::Sink;
+    type Src = B::Src;
+    fn next(&mut self, sink: Self::Sink) -> Self::Src {
+        self.b.next(self.a.next(sink).into())
+    }
+}
+impl<A, B> Pipeline for Pipe<A, B>
+where Self: Element<Sink=(), Src=()> {
+    fn start(mut self) {
+        loop {
+            self.next(());
+        }
+    }
 }
 
