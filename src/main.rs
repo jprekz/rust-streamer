@@ -19,31 +19,18 @@ macro_rules! pipe {
 }
 
 fn main() {
-    let source = StaticSource::new("test85.wav");
-    let ident: Ident<Sample> = Ident::new();
-    let ident2: Ident<Sample> = Ident::new();
-    let sink = PrintSink::new();
-
-    let p = pipe!(source, ident, ident2, sink);
-
-    p.start();
-}
-
-fn _test() {
     let sdl_context = sdl2::init().unwrap();
     let audio_subsystem = sdl_context.audio().unwrap();
 
-    let mut ss = StaticSource::new("test85.wav");
-    let mut s = SDL2Sink::new(audio_subsystem, move || {
-        let sm = ss.next(()).to_float();
-        match sm {
-            Sample::StereoF64 {l, r:_r} =>
-                return (l * ::std::i16::MAX as f64) as i16,
-            _ => panic!(),
-        }
-    });
+    let source = StaticSource::new("test85.wav");
+    let ident: Ident<Sample> = Ident::new();
+    //let sink = PrintSink::new();
+    let sink = SDL2Sink::new(audio_subsystem);
 
-    s.start();
+    let p = pipe!(source, ident, sink);
+    p.start();
+
+    std::thread::sleep(std::time::Duration::from_millis(2000));
 }
 
 struct StaticSource {
@@ -84,38 +71,67 @@ impl<T> Element for Ident<T> {
 }
 
 use self::sdl2::audio::*;
-struct SDL2Sink<F: FnMut() -> i16> where F: Send + Sync {
-    device: AudioDevice<SDL2Callback<F>>
+struct SDL2Sink {
+    audio_subsystem: sdl2::AudioSubsystem,
+    stop_handle: Option<Box<SDL2DeviceStopHandle>>
 }
-impl<F: FnMut() -> i16> SDL2Sink<F> where F: Send + Sync {
-    fn new(audio_subsystem: sdl2::AudioSubsystem, f: F) -> Self {
+impl SDL2Sink {
+    fn new(audio_subsystem: sdl2::AudioSubsystem) -> Self {
+        Self {
+            audio_subsystem: audio_subsystem,
+            stop_handle: None
+        }
+    }
+}
+impl PullElement for SDL2Sink {
+    type Sink = Sample;
+    fn start<E>(&mut self, mut sink: E)
+    where E: Element<Sink=(), Src=Self::Sink> + Send + Sync + 'static {
         let desired_spec = AudioSpecDesired {
             freq: Some(44100),
             channels: Some(2),
             samples: None
         };
-        let device = audio_subsystem.open_playback(None, &desired_spec, |_spec| {
-            SDL2Callback {iter: f}
+        let device = self.audio_subsystem.open_playback(None, &desired_spec, |_spec| {
+            SDL2Callback { iter: move || {
+                let sm = sink.next(()).to_float();
+                match sm {
+                    Sample::StereoF64 {l, r:_r} =>
+                        return (l * ::std::i16::MAX as f64) as i16,
+                    _ => panic!(),
+                }
+            }
+        }
         }).unwrap();
-        Self {
-            device: device
+        device.resume();
+        self.stop_handle = Some(Box::new(device));
+    }
+    fn stop(&mut self) {
+        match self.stop_handle {
+            Some(ref handle) => handle.stop(),
+            None => {}
         }
     }
-    fn start(&mut self) {
-        self.device.resume();
-    }
 }
+
 struct SDL2Callback<F: FnMut() -> i16> {
     iter: F,
 }
 impl<F: FnMut() -> i16> AudioCallback for SDL2Callback<F>
-where SDL2Callback<F>: Send + Sync,
-      F: Send + Sync {
+where Self: Send + Sync {
     type Channel = i16;
     fn callback(&mut self, out: &mut [Self::Channel]) {
         for buf in out {
             *buf = (self.iter)();
         }
+    }
+}
+trait SDL2DeviceStopHandle {
+    fn stop(&self);
+}
+impl<CB: AudioCallback> SDL2DeviceStopHandle for AudioDevice<CB> {
+    fn stop(&self) {
+        self.pause();
     }
 }
 
@@ -140,7 +156,16 @@ trait Element {
     type Src;
     fn next(&mut self, sink: Self::Sink) -> Self::Src;
 }
+trait PullElement {
+    type Sink;
+    fn start<E>(&mut self, sink: E)
+        where E: Element<Sink=(), Src=Self::Sink> + Send + Sync + 'static;
+    fn stop(&mut self);
+}
 trait Pipeline {
+    fn start(self);
+}
+trait SinkPipeline {
     fn start(self);
 }
 
@@ -169,6 +194,14 @@ where Self: Element<Sink=(), Src=()> {
         loop {
             self.next(());
         }
+    }
+}
+impl<A, B> SinkPipeline for Pipe<A, B>
+where A: Element<Sink=()> + Send + Sync + 'static,
+      B: PullElement<Sink=A::Src> {
+    fn start(mut self) {
+        self.b.start(self.a);
+        std::thread::sleep(std::time::Duration::from_millis(2000));
     }
 }
 
