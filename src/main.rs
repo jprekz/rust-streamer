@@ -94,14 +94,13 @@ impl PullElement for CpalSink {
                 match buffer {
                     UnknownTypeBuffer::F32(mut buffer) => {
                         for sample in buffer.chunks_mut(format.channels.len()) {
-                            let value = match sink.next(()).to_float() {
-                                wav::Sample::StereoF64 {l, r:_r} =>
-                                    l as f32,
+                            let values = match sink.next(()).to_float() {
+                                wav::Sample::StereoF64 {l, r} =>
+                                    [l as f32, r as f32],
                                 _ => panic!(),
                             };
-                            for out in sample.iter_mut() {
-                                *out = value;
-                            }
+                            sample[0] = values[0];
+                            sample[1] = values[1];
                         }
                     },
                     _ => panic!()
