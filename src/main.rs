@@ -1,4 +1,4 @@
-extern crate sdl2;
+extern crate cpal;
 
 use std::fs::File;
 
@@ -19,13 +19,10 @@ macro_rules! pipe {
 }
 
 fn main() {
-    let sdl_context = sdl2::init().unwrap();
-    let audio_subsystem = sdl_context.audio().unwrap();
-
     let source = StaticSource::new("test85.wav");
     let ident: Ident<Sample> = Ident::new();
     //let sink = PrintSink::new();
-    let sink = SDL2Sink::new(audio_subsystem);
+    let sink = CpalSink::new();
 
     let p = pipe!(source, ident, sink);
     p.start();
@@ -70,68 +67,50 @@ impl<T> Element for Ident<T> {
     }
 }
 
-use self::sdl2::audio::*;
-struct SDL2Sink {
-    audio_subsystem: sdl2::AudioSubsystem,
-    stop_handle: Option<Box<SDL2DeviceStopHandle>>
+struct CpalSink {
 }
-impl SDL2Sink {
-    fn new(audio_subsystem: sdl2::AudioSubsystem) -> Self {
-        Self {
-            audio_subsystem: audio_subsystem,
-            stop_handle: None
-        }
+impl CpalSink {
+    fn new() -> Self {
+        CpalSink {}
     }
 }
-impl PullElement for SDL2Sink {
+impl PullElement for CpalSink {
     type Sink = Sample;
     fn start<E>(&mut self, mut sink: E)
     where E: Element<Sink=(), Src=Self::Sink> + Send + Sync + 'static {
-        let desired_spec = AudioSpecDesired {
-            freq: Some(44100),
-            channels: Some(2),
-            samples: None
+        use cpal::*;
+
+        let endpoint = default_endpoint().expect("Failed to get default endpoint");
+        let format = Format {
+            channels: vec![ChannelPosition::FrontLeft, ChannelPosition::FrontRight],
+            samples_rate: SamplesRate(44100),
+            data_type: SampleFormat::F32
         };
-        let device = self.audio_subsystem.open_playback(None, &desired_spec, |_spec| {
-            SDL2Callback { iter: move || {
-                let sm = sink.next(()).to_float();
-                match sm {
-                    Sample::StereoF64 {l, r:_r} =>
-                        return (l * ::std::i16::MAX as f64) as i16,
-                    _ => panic!(),
-                }
-            }
-        }
-        }).unwrap();
-        device.resume();
-        self.stop_handle = Some(Box::new(device));
+        let event_loop = EventLoop::new();
+        let voice_id = event_loop.build_voice(&endpoint, &format).unwrap();
+        event_loop.play(voice_id);
+        std::thread::spawn(move || {
+            event_loop.run(move |_, buffer| {
+                match buffer {
+                    UnknownTypeBuffer::F32(mut buffer) => {
+                        for sample in buffer.chunks_mut(format.channels.len()) {
+                            let value = match sink.next(()).to_float() {
+                                wav::Sample::StereoF64 {l, r:_r} =>
+                                    l as f32,
+                                _ => panic!(),
+                            };
+                            for out in sample.iter_mut() {
+                                *out = value;
+                            }
+                        }
+                    },
+                    _ => panic!()
+                };
+            });
+        });
     }
     fn stop(&mut self) {
-        match self.stop_handle {
-            Some(ref handle) => handle.stop(),
-            None => {}
-        }
-    }
-}
-
-struct SDL2Callback<F: FnMut() -> i16> {
-    iter: F,
-}
-impl<F: FnMut() -> i16> AudioCallback for SDL2Callback<F>
-where Self: Send + Sync {
-    type Channel = i16;
-    fn callback(&mut self, out: &mut [Self::Channel]) {
-        for buf in out {
-            *buf = (self.iter)();
-        }
-    }
-}
-trait SDL2DeviceStopHandle {
-    fn stop(&self);
-}
-impl<CB: AudioCallback> SDL2DeviceStopHandle for AudioDevice<CB> {
-    fn stop(&self) {
-        self.pause();
+        unimplemented!();
     }
 }
 

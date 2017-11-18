@@ -4,4 +4,4 @@ version = "0.1.0"
 authors = ["jprekz <jprekz@users.noreply.github.com>"]
 
 [dependencies]
-sdl2 = "0.30.0"
+cpal = "*"
