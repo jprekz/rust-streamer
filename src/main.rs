@@ -25,7 +25,10 @@ fn main() {
     let sink = CpalSink::new();
 
     let p = pipe!(source, ident, sink);
-    p.start();
+
+    std::thread::spawn(move || {
+        p.start();
+    });
 
     std::thread::sleep(std::time::Duration::from_millis(2000));
 }
@@ -89,23 +92,21 @@ impl PullElement for CpalSink {
         let event_loop = EventLoop::new();
         let voice_id = event_loop.build_voice(&endpoint, &format).unwrap();
         event_loop.play(voice_id);
-        std::thread::spawn(move || {
-            event_loop.run(move |_, buffer| {
-                match buffer {
-                    UnknownTypeBuffer::F32(mut buffer) => {
-                        for sample in buffer.chunks_mut(format.channels.len()) {
-                            let values = match sink.next(()).to_float() {
-                                wav::Sample::StereoF64 {l, r} =>
-                                    [l as f32, r as f32],
-                                _ => panic!(),
-                            };
-                            sample[0] = values[0];
-                            sample[1] = values[1];
-                        }
-                    },
-                    _ => panic!()
-                };
-            });
+        event_loop.run(move |_, buffer| {
+            match buffer {
+                UnknownTypeBuffer::F32(mut buffer) => {
+                    for sample in buffer.chunks_mut(format.channels.len()) {
+                        let values = match sink.next(()).to_float() {
+                            wav::Sample::StereoF64 {l, r} =>
+                                [l as f32, r as f32],
+                            _ => panic!(),
+                        };
+                        sample[0] = values[0];
+                        sample[1] = values[1];
+                    }
+                },
+                _ => panic!()
+            };
         });
     }
     fn stop(&mut self) {
@@ -179,7 +180,6 @@ where A: Element<Sink=()> + Send + Sync + 'static,
       B: PullElement<Sink=A::Src> {
     fn start(mut self) {
         self.b.start(self.a);
-        std::thread::sleep(std::time::Duration::from_millis(2000));
     }
 }
 
