@@ -81,7 +81,7 @@ impl WAV {
         }
     }
 
-    pub fn get_sample(&self, index: usize) -> Option<Sample> {
+    pub fn get_sample(&self, index: usize) -> Option<WAVSample> {
         match (self.channels, self.bitswidth) {
             (2, 16) => {
                 if self.raw_data.len() < (index + 1) * 4 { return None; }
@@ -89,24 +89,24 @@ impl WAV {
                 let l = i16::from_le(unsafe {transmute(l)});
                 let r = [self.raw_data[index * 4 + 2], self.raw_data[index * 4 + 3]];
                 let r = i16::from_le(unsafe {transmute(r)});
-                Some(Sample::StereoI16 { l: l, r: r })
+                Some(WAVSample::StereoI16 { l: l, r: r })
             },
             (2, 8) => {
                 if self.raw_data.len() < (index + 1) * 2 { return None; }
                 let l = self.raw_data[index * 2 + 0] as i8;
                 let r = self.raw_data[index * 2 + 1] as i8;
-                Some(Sample::StereoI8 { l: l, r: r })
+                Some(WAVSample::StereoI8 { l: l, r: r })
             },
             (1, 16) => {
                 if self.raw_data.len() < (index + 1) * 2 { return None; }
                 let s = [self.raw_data[index * 2 + 0], self.raw_data[index * 2 + 1]];
                 let s = i16::from_le(unsafe {transmute(s)});
-                Some(Sample::MonoI16(s))
+                Some(WAVSample::MonoI16(s))
             },
             (1, 8) => {
                 if self.raw_data.len() < (index + 1) { return None; }
                 let s = self.raw_data[index] as i8;
-                Some(Sample::MonoI8(s))
+                Some(WAVSample::MonoI8(s))
             },
             _ => {panic!()}
         }
@@ -114,7 +114,7 @@ impl WAV {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub enum Sample {
+pub enum WAVSample {
     StereoF64 { l: f64, r: f64 },
     StereoI16 { l: i16, r: i16 },
     StereoI8 { l: i8, r: i8 },
@@ -123,17 +123,17 @@ pub enum Sample {
     MonoI8(i8),
 }
 
-impl Sample {
-    pub fn to_float(self) -> Sample {
+impl WAVSample {
+    pub fn to_float(self) -> WAVSample {
         match self {
-            Sample::StereoI16 { l, r } =>
-                Sample::StereoF64 { l: l as f64 / 32768.0, r: r as f64 / 32768.0 },
-            Sample::StereoI8 { l, r } =>
-                Sample::StereoF64 { l: l as f64 / 128.0, r: r as f64 / 128.0 },
-            Sample::MonoI16(s) =>
-                Sample::MonoF64(s as f64 / 32768.0),
-            Sample::MonoI8(s) =>
-                Sample::MonoF64(s as f64 / 128.0),
+            WAVSample::StereoI16 { l, r } =>
+                WAVSample::StereoF64 { l: l as f64 / 32768.0, r: r as f64 / 32768.0 },
+            WAVSample::StereoI8 { l, r } =>
+                WAVSample::StereoF64 { l: l as f64 / 128.0, r: r as f64 / 128.0 },
+            WAVSample::MonoI16(s) =>
+                WAVSample::MonoF64(s as f64 / 32768.0),
+            WAVSample::MonoI8(s) =>
+                WAVSample::MonoF64(s as f64 / 128.0),
             _ => self
         }
     }

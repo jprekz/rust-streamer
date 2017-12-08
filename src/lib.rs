@@ -7,6 +7,7 @@ mod wav;
 pub trait Element {
     type Sink;
     type Src;
+    type Freq: Freq;
     fn next(&mut self, sink: Self::Sink) -> Self::Src;
 }
 pub trait PullElement {
@@ -39,12 +40,14 @@ impl<A, B> Pipe<A, B> {
         Self {a: a, b: b}
     }
 }
-impl<A, B> Element for Pipe<A, B>
-where A: Element,
-      B: Element,
+impl<A, B, F> Element for Pipe<A, B>
+where F: Freq,
+      A: Element<Freq=F>,
+      B: Element<Freq=F>,
       A::Src: Into<B::Sink> {
     type Sink = A::Sink;
     type Src = B::Src;
+    type Freq = F;
     fn next(&mut self, sink: Self::Sink) -> Self::Src {
         self.b.next(self.a.next(sink).into())
     }
@@ -101,23 +104,29 @@ impl<E, F> FreqConv<E, F> {
         }
     }
 }
-impl<E, ET, EF, F> Element for FreqConv<E, F>
-where EF: Freq,
-      E: Element<Src=Format<ET, EF>>,
-      F: ConstFreq {
+impl<E: Element, F: Freq> Element for FreqConv<E, F> {
     type Sink = E::Sink;
-    type Src = Format<ET, F>;
+    type Src = E::Src;
+    type Freq = F;
     fn next(&mut self, sink: Self::Sink) -> Self::Src {
-        let Format { sample: s, freq: _f } = self.source.next(sink);
-        Format { sample: s, freq: Default::default() }
+        self.source.next(sink)
     }
 }
 
-
-// Format type (experimental)
-pub struct Format<T, F: Freq> {
-    sample: T,
-    freq: F
+pub trait Sample {
+    const MIN_LEVEL: Self;
+    const MAX_LEVEL: Self;
+    const REF_LEVEL: Self;
+}
+impl Sample for i32 {
+    const MIN_LEVEL: Self = std::i32::MIN;
+    const MAX_LEVEL: Self = std::i32::MAX;
+    const REF_LEVEL: Self = 0i32;
+}
+impl Sample for f64 {
+    const MIN_LEVEL: Self = -1f64;
+    const MAX_LEVEL: Self = 1f64;
+    const REF_LEVEL: Self = 0f64;
 }
 
 pub trait Freq {
