@@ -50,14 +50,19 @@ impl<T, F: Freq> Element for Ident<T, F> {
     }
 }
 
-pub struct CpalSink {}
-impl CpalSink {
+pub struct CpalSink<F> {
+    f: ::std::marker::PhantomData<F>
+}
+impl<F> CpalSink<F> {
     pub fn new() -> Self {
-        CpalSink {}
+        CpalSink {
+            f: ::std::marker::PhantomData
+        }
     }
 }
-impl PullElement for CpalSink {
+impl<F: ConstFreq> PullElement for CpalSink<F> {
     type Sink = WAVSample;
+    type Freq = F;
     fn start<E>(&mut self, mut sink: E)
     where E: Element<Sink=(), Src=Self::Sink> + Send + Sync + 'static {
         use self::cpal::*;
@@ -65,7 +70,7 @@ impl PullElement for CpalSink {
         let endpoint = default_endpoint().expect("Failed to get default endpoint");
         let format = Format {
             channels: vec![ChannelPosition::FrontLeft, ChannelPosition::FrontRight],
-            samples_rate: SamplesRate(48000),
+            samples_rate: SamplesRate(F::F),
             data_type: SampleFormat::F32
         };
         let event_loop = EventLoop::new();

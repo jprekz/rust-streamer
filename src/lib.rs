@@ -12,12 +12,14 @@ pub trait Element {
 }
 pub trait PullElement {
     type Sink;
+    type Freq: Freq;
     fn start<E>(&mut self, sink: E)
         where E: Element<Sink=(), Src=Self::Sink> + Send + Sync + 'static;
     fn stop(&mut self);
 }
 pub trait PushElement {
     type Src;
+    type Freq: Freq;
     fn start<E>(&mut self, src: E)
         where E: Element<Sink=Self::Src, Src=()> + Send + Sync + 'static;
     fn stop(&mut self);
@@ -60,9 +62,10 @@ where Self: Element<Sink=(), Src=()> {
         }
     }
 }
-impl<A, B> SinkPipeline for Pipe<A, B>
-where A: Element<Sink=()> + Send + Sync + 'static,
-      B: PullElement<Sink=A::Src> {
+impl<A, B, F> SinkPipeline for Pipe<A, B>
+where F: Freq,
+      A: Element<Sink=(), Freq=F> + Send + Sync + 'static,
+      B: PullElement<Sink=A::Src, Freq=F> {
     fn start(mut self) {
         self.b.start(self.a);
     }
