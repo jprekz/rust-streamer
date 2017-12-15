@@ -4,7 +4,7 @@ use rust_streamer::element::*;
 
 fn main() {
     let source = StaticSource::new("test85.wav");
-    let source: FreqConv<_, F48000> = FreqConv::new(source);
+    let source = FreqConv::new(source);
 
     let ident = Ident::new();
 

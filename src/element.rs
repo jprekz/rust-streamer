@@ -22,47 +22,40 @@ impl StaticSource {
 impl Element for StaticSource {
     type Sink = ();
     type Src = WAVSample;
-    type Freq = AnyFreq;
     fn next(&mut self, _sink: Self::Sink) -> Self::Src {
         self.pos += 1;
         self.wav.get_sample(self.pos - 1).unwrap()
     }
 }
 
-pub struct Ident<T, F> {
+pub struct Ident<T> {
     t: ::std::marker::PhantomData<T>,
-    f: ::std::marker::PhantomData<F>
 }
-impl<T,F> Ident<T, F> {
+impl<T> Ident<T> {
     pub fn new() -> Self {
         Self {
             t: ::std::marker::PhantomData,
-            f: ::std::marker::PhantomData
         }
     }
 }
-impl<T, F: Freq> Element for Ident<T, F> {
+impl<T> Element for Ident<T> {
     type Sink = T;
     type Src = T;
-    type Freq = F;
     fn next(&mut self, sink: Self::Sink) -> Self::Src {
         sink
     }
 }
 
-pub struct CpalSink<F> {
-    f: ::std::marker::PhantomData<F>
+pub struct CpalSink {
 }
-impl<F> CpalSink<F> {
+impl CpalSink {
     pub fn new() -> Self {
         CpalSink {
-            f: ::std::marker::PhantomData
         }
     }
 }
-impl<F: ConstFreq> PullElement for CpalSink<F> {
+impl PullElement for CpalSink {
     type Sink = WAVSample;
-    type Freq = F;
     fn start<E>(&mut self, mut sink: E)
     where E: Element<Sink=(), Src=Self::Sink> + Send + Sync + 'static {
         use self::cpal::*;
@@ -70,7 +63,7 @@ impl<F: ConstFreq> PullElement for CpalSink<F> {
         let endpoint = default_endpoint().expect("Failed to get default endpoint");
         let format = Format {
             channels: vec![ChannelPosition::FrontLeft, ChannelPosition::FrontRight],
-            samples_rate: SamplesRate(F::F),
+            samples_rate: SamplesRate(48000),
             data_type: SampleFormat::F32
         };
         let event_loop = EventLoop::new();
@@ -98,23 +91,20 @@ impl<F: ConstFreq> PullElement for CpalSink<F> {
     }
 }
 
-pub struct PrintSink<T, F> {
+pub struct PrintSink<T> {
     t: ::std::marker::PhantomData<T>,
-    f: ::std::marker::PhantomData<F>
 }
-impl<T, F> PrintSink<T, F> {
+impl<T> PrintSink<T> {
     pub fn new() -> Self {
         Self {
             t: ::std::marker::PhantomData,
-            f: ::std::marker::PhantomData
         }
     }
 }
-impl<T, F: Freq> Element for PrintSink<T, F>
+impl<T> Element for PrintSink<T>
 where T: std::fmt::Debug {
     type Sink = T;
     type Src = ();
-    type Freq = F;
     fn next(&mut self, sink: Self::Sink) -> Self::Src {
         println!("{:?}", sink);
     }

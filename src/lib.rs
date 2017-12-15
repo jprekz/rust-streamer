@@ -7,19 +7,16 @@ mod wav;
 pub trait Element {
     type Sink;
     type Src;
-    type Freq: Freq;
     fn next(&mut self, sink: Self::Sink) -> Self::Src;
 }
 pub trait PullElement {
     type Sink;
-    type Freq: Freq;
     fn start<E>(&mut self, sink: E)
         where E: Element<Sink=(), Src=Self::Sink> + Send + Sync + 'static;
     fn stop(&mut self);
 }
 pub trait PushElement {
     type Src;
-    type Freq: Freq;
     fn start<E>(&mut self, src: E)
         where E: Element<Sink=Self::Src, Src=()> + Send + Sync + 'static;
     fn stop(&mut self);
@@ -42,14 +39,12 @@ impl<A, B> Pipe<A, B> {
         Self {a: a, b: b}
     }
 }
-impl<A, B, F> Element for Pipe<A, B>
-where F: Freq,
-      A: Element<Freq=F>,
-      B: Element<Freq=F>,
+impl<A, B> Element for Pipe<A, B>
+where A: Element,
+      B: Element,
       A::Src: Into<B::Sink> {
     type Sink = A::Sink;
     type Src = B::Src;
-    type Freq = F;
     fn next(&mut self, sink: Self::Sink) -> Self::Src {
         self.b.next(self.a.next(sink).into())
     }
@@ -62,10 +57,9 @@ where Self: Element<Sink=(), Src=()> {
         }
     }
 }
-impl<A, B, F> SinkPipeline for Pipe<A, B>
-where F: Freq,
-      A: Element<Sink=(), Freq=F> + Send + Sync + 'static,
-      B: PullElement<Sink=A::Src, Freq=F> {
+impl<A, B> SinkPipeline for Pipe<A, B>
+where A: Element<Sink=()> + Send + Sync + 'static,
+      B: PullElement<Sink=A::Src> {
     fn start(mut self) {
         self.b.start(self.a);
     }
@@ -87,19 +81,17 @@ macro_rules! pipe {
     }}
 }
 
-pub struct FreqConv<E, F> {
+pub struct FreqConv<E> {
     source: E,
-    freq: ::std::marker::PhantomData<F>,
     buffer: f64,
     buffer_prev: f64,
     buffer_ptr: isize,
     next_ptr: isize
 }
-impl<E, F> FreqConv<E, F> {
+impl<E> FreqConv<E> {
     pub fn new(source: E) -> Self {
         Self {
             source: source,
-            freq: ::std::marker::PhantomData,
             buffer: 0f64,
             buffer_prev: 0f64,
             buffer_ptr: -1,
@@ -107,10 +99,9 @@ impl<E, F> FreqConv<E, F> {
         }
     }
 }
-impl<E: Element, F: Freq> Element for FreqConv<E, F> {
+impl<E: Element> Element for FreqConv<E> {
     type Sink = E::Sink;
     type Src = E::Src;
-    type Freq = F;
     fn next(&mut self, sink: Self::Sink) -> Self::Src {
         self.source.next(sink)
     }
@@ -132,40 +123,41 @@ impl Sample for f64 {
     const REF_LEVEL: Self = 0f64;
 }
 
-pub trait Freq {
-    fn get_hz(&self) -> u32;
-    fn get_period(&self) -> f64 {
-        1f64 / self.get_hz() as f64
+use std::ops::{Deref, DerefMut};
+struct WithFreq<E> {
+    element: E,
+    freq: u32
+}
+impl<E> WithFreq<E> {
+    fn new(element: E, freq: u32) -> Self {
+        Self {
+            element: element,
+            freq: freq
+        }
     }
 }
-pub struct AnyFreq {
-    f: u32
-}
-impl AnyFreq {
-    fn new(f: u32) -> Self {
-        Self {f: f}
+impl<E> Deref for WithFreq<E> {
+    type Target = E;
+    fn deref(&self) -> &Self::Target {
+        &self.element
     }
 }
-impl Freq for AnyFreq {
-    fn get_hz(&self) -> u32 {
-        self.f
+impl<E> DerefMut for WithFreq<E> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.element
     }
 }
-pub trait ConstFreq : Default {
-    const F: u32;
-}
-impl<T: ConstFreq> Freq for T {
-    fn get_hz(&self) -> u32 {
-        Self::F
+
+impl<E: Element> Element for WithFreq<E> {
+    type Sink = E::Sink;
+    type Src = E::Src;
+    fn next(&mut self, sink: Self::Sink) -> Self::Src {
+        self.element.next(sink)
     }
 }
-#[derive(Default)]
-pub struct F44100;
-impl ConstFreq for F44100 {
-    const F: u32 = 44100;
-}
-#[derive(Default)]
-pub struct F48000;
-impl ConstFreq for F48000 {
-    const F: u32 = 48000;
+
+trait SetFreq where Self: Sized {
+    fn set_freq(self, freq: u32) -> WithFreq<Self> {
+        WithFreq::new(self, freq)
+    }
 }
