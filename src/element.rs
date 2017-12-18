@@ -5,6 +5,8 @@ use super::wav::*;
 
 use std::fs::File;
 
+// Input / Output
+
 pub struct WAVSource {
     wav: WAV,
     pos: usize,
@@ -24,35 +26,6 @@ impl<Ctx> Element<(), Ctx> for WAVSource {
     fn next(&mut self, _sink: (), _ctx: &Ctx) -> WAVSample {
         self.pos += 1;
         self.wav.get_sample(self.pos - 1).unwrap()
-    }
-}
-
-pub struct Ident;
-impl Ident {
-    pub fn new() -> Self { Self{} }
-}
-impl<T, Ctx> Element<T, Ctx> for Ident {
-    type Src = T;
-    fn next(&mut self, sink: T, _ctx: &Ctx) -> T {
-        sink
-    }
-}
-
-pub struct Tee<F> {
-    f: F
-}
-impl<F> Tee<F> {
-    pub fn new(f: F) -> Self {
-        Tee { f: f }
-    }
-}
-impl<T, Ctx, F> Element<T, Ctx> for Tee<F>
-where F: Fn(T),
-      T: Copy {
-    type Src = T;
-    fn next(&mut self, sink: T, _ctx: &Ctx) -> T {
-        (self.f)(sink);
-        sink
     }
 }
 
@@ -125,3 +98,37 @@ where T: std::fmt::Debug {
         println!("{:?}", sink);
     }
 }
+
+// Common Element
+
+pub struct Ident;
+impl Ident {
+    pub fn new() -> Self {
+        Self{}
+    }
+}
+impl<T, Ctx> Element<T, Ctx> for Ident {
+    type Src = T;
+    fn next(&mut self, sink: T, _ctx: &Ctx) -> T {
+        sink
+    }
+}
+
+pub struct Tee<F> {
+    f: F
+}
+impl<F> Tee<F> {
+    pub fn new(f: F) -> Self {
+        Tee { f: f }
+    }
+}
+impl<T, Ctx, F> Element<T, Ctx> for Tee<F>
+where F: Fn(T),
+      T: Copy {
+    type Src = T;
+    fn next(&mut self, sink: T, _ctx: &Ctx) -> T {
+        (self.f)(sink);
+        sink
+    }
+}
+
