@@ -5,11 +5,11 @@ use super::wav::*;
 
 use std::fs::File;
 
-pub struct StaticSource {
+pub struct WAVSource {
     wav: WAV,
     pos: usize,
 }
-impl StaticSource {
+impl WAVSource {
     pub fn new(filename: &str) -> Self {
         let file = File::open(filename).unwrap();
         let wav = WAV::new(file);
@@ -19,7 +19,7 @@ impl StaticSource {
         }
     }
 }
-impl<Ctx> Element<(), Ctx> for StaticSource {
+impl<Ctx> Element<(), Ctx> for WAVSource {
     type Src = WAVSample;
     fn next(&mut self, _sink: (), _ctx: &Ctx) -> WAVSample {
         self.pos += 1;
@@ -56,12 +56,10 @@ where F: Fn(T),
     }
 }
 
-pub struct CpalSink {
-}
+pub struct CpalSink;
 impl CpalSink {
     pub fn new() -> Self {
-        CpalSink {
-        }
+        CpalSink {}
     }
 }
 impl<Ctx> PullElement<WAVSample, Ctx> for CpalSink
@@ -77,7 +75,7 @@ where Ctx: FreqCtx {
             data_type: SampleFormat::F32
         };
         let event_loop = EventLoop::new();
-        let voice_id = event_loop.build_voice(&endpoint, &format).unwrap();
+        let voice_id = event_loop.build_voice(&endpoint, &format).expect("Failed to build voice");
         event_loop.play(voice_id);
         event_loop.run(move |_, buffer| {
             match buffer {
@@ -101,21 +99,29 @@ where Ctx: FreqCtx {
     }
 }
 
-pub struct PrintSink<T> {
-    t: ::std::marker::PhantomData<T>,
-}
-impl<T> PrintSink<T> {
+pub struct NullSink;
+impl NullSink {
     pub fn new() -> Self {
-        Self {
-            t: ::std::marker::PhantomData,
-        }
+        Self {}
     }
 }
-impl<T, Ctx> Element<T, Ctx> for PrintSink<T>
+impl<T, Ctx> Element<T, Ctx> for NullSink {
+    type Src = ();
+    fn next(&mut self, _sink: T, _ctx: &Ctx) {
+        // do nothing
+    }
+}
+
+pub struct PrintSink;
+impl PrintSink {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+impl<T, Ctx> Element<T, Ctx> for PrintSink
 where T: std::fmt::Debug {
     type Src = ();
     fn next(&mut self, sink: T, _ctx: &Ctx) {
         println!("{:?}", sink);
     }
 }
-

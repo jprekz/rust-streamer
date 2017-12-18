@@ -3,7 +3,7 @@ use rust_streamer::*;
 use rust_streamer::element::*;
 
 fn main() {
-    let source = StaticSource::new("test85.wav");
+    let source = WAVSource::new("test85.wav");
     //let source = FreqConv::new(source);
 
     let ident = Ident::new();
