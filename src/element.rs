@@ -19,29 +19,39 @@ impl StaticSource {
         }
     }
 }
-impl Element for StaticSource {
-    type Sink = ();
+impl<Ctx> Element<(), Ctx> for StaticSource {
     type Src = WAVSample;
-    fn next(&mut self, _sink: Self::Sink) -> Self::Src {
+    fn next(&mut self, _sink: (), _ctx: &Ctx) -> WAVSample {
         self.pos += 1;
         self.wav.get_sample(self.pos - 1).unwrap()
     }
 }
 
-pub struct Ident<T> {
-    t: ::std::marker::PhantomData<T>,
+pub struct Ident;
+impl Ident {
+    pub fn new() -> Self { Self{} }
 }
-impl<T> Ident<T> {
-    pub fn new() -> Self {
-        Self {
-            t: ::std::marker::PhantomData,
-        }
+impl<T, Ctx> Element<T, Ctx> for Ident {
+    type Src = T;
+    fn next(&mut self, sink: T, _ctx: &Ctx) -> T {
+        sink
     }
 }
-impl<T> Element for Ident<T> {
-    type Sink = T;
+
+pub struct Tee<F> {
+    f: F
+}
+impl<F> Tee<F> {
+    pub fn new(f: F) -> Self {
+        Tee { f: f }
+    }
+}
+impl<T, Ctx, F> Element<T, Ctx> for Tee<F>
+where F: Fn(T),
+      T: Copy {
     type Src = T;
-    fn next(&mut self, sink: Self::Sink) -> Self::Src {
+    fn next(&mut self, sink: T, _ctx: &Ctx) -> T {
+        (self.f)(sink);
         sink
     }
 }
@@ -54,10 +64,9 @@ impl CpalSink {
         }
     }
 }
-impl PullElement for CpalSink {
-    type Sink = WAVSample;
-    fn start<E>(&mut self, mut sink: E)
-    where E: Element<Sink=(), Src=Self::Sink> + Send + Sync + 'static {
+impl<Ctx> PullElement<WAVSample, Ctx> for CpalSink {
+    fn start<E>(&mut self, mut sink: E, ctx: &Ctx)
+    where E: Element<(), Ctx, Src=WAVSample> + Send + Sync + 'static {
         use self::cpal::*;
 
         let endpoint = default_endpoint().expect("Failed to get default endpoint");
@@ -73,7 +82,7 @@ impl PullElement for CpalSink {
             match buffer {
                 UnknownTypeBuffer::F32(mut buffer) => {
                     for sample in buffer.chunks_mut(format.channels.len()) {
-                        let values = match sink.next(()).to_float() {
+                        let values = match sink.next((), ctx).to_float() {
                             wav::WAVSample::StereoF64 {l, r} =>
                                 [l as f32, r as f32],
                             _ => panic!(),
@@ -101,11 +110,10 @@ impl<T> PrintSink<T> {
         }
     }
 }
-impl<T> Element for PrintSink<T>
+impl<T, Ctx> Element<T, Ctx> for PrintSink<T>
 where T: std::fmt::Debug {
-    type Sink = T;
     type Src = ();
-    fn next(&mut self, sink: Self::Sink) -> Self::Src {
+    fn next(&mut self, sink: T, _ctx: &Ctx) {
         println!("{:?}", sink);
     }
 }

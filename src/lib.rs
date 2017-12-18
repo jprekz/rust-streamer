@@ -4,28 +4,25 @@ mod wav;
 
 // core traits
 
-pub trait Element {
-    type Sink;
+pub trait Element<Sink, Ctx> {
     type Src;
-    fn next(&mut self, sink: Self::Sink) -> Self::Src;
+    fn next(&mut self, sink: Sink, ctx: &Ctx) -> Self::Src;
 }
-pub trait PullElement {
-    type Sink;
-    fn start<E>(&mut self, sink: E)
-        where E: Element<Sink=(), Src=Self::Sink> + Send + Sync + 'static;
+pub trait PullElement<Sink, Ctx> {
+    fn start<E>(&mut self, sink: E, ctx: &Ctx)
+        where E: Element<(), Ctx, Src=Sink> + Send + Sync + 'static;
     fn stop(&mut self);
 }
-pub trait PushElement {
-    type Src;
-    fn start<E>(&mut self, src: E)
-        where E: Element<Sink=Self::Src, Src=()> + Send + Sync + 'static;
+pub trait PushElement<Src, Ctx> {
+    fn start<E>(&mut self, src: E, ctx: &Ctx)
+        where E: Element<Src, Ctx, Src=()> + Send + Sync + 'static;
     fn stop(&mut self);
 }
-pub trait Pipeline {
-    fn start(self);
+pub trait Pipeline<Ctx> {
+    fn start(self, ctx: &Ctx);
 }
-pub trait SinkPipeline {
-    fn start(self);
+pub trait SinkPipeline<Ctx> {
+    fn start(self, ctx: &Ctx);
 }
 
 // pipe
@@ -39,29 +36,27 @@ impl<A, B> Pipe<A, B> {
         Self {a: a, b: b}
     }
 }
-impl<A, B> Element for Pipe<A, B>
-where A: Element,
-      B: Element,
-      A::Src: Into<B::Sink> {
-    type Sink = A::Sink;
+impl<A, B, Sink, Ctx> Element<Sink, Ctx> for Pipe<A, B>
+where A: Element<Sink, Ctx>,
+      B: Element<A::Src, Ctx> {
     type Src = B::Src;
-    fn next(&mut self, sink: Self::Sink) -> Self::Src {
-        self.b.next(self.a.next(sink).into())
+    fn next(&mut self, sink: Sink, ctx: &Ctx) -> Self::Src {
+        self.b.next(self.a.next(sink, ctx), ctx)
     }
 }
-impl<A, B> Pipeline for Pipe<A, B>
-where Self: Element<Sink=(), Src=()> {
-    fn start(mut self) {
+impl<A, B, Ctx> Pipeline<Ctx> for Pipe<A, B>
+where Self: Element<(), Ctx, Src=()> {
+    fn start(mut self, ctx: &Ctx) {
         loop {
-            self.next(());
+            self.next((), ctx);
         }
     }
 }
-impl<A, B> SinkPipeline for Pipe<A, B>
-where A: Element<Sink=()> + Send + Sync + 'static,
-      B: PullElement<Sink=A::Src> {
-    fn start(mut self) {
-        self.b.start(self.a);
+impl<A, B, Ctx> SinkPipeline<Ctx> for Pipe<A, B>
+where A: Element<(), Ctx> + Send + Sync + 'static,
+      B: PullElement<A::Src, Ctx> {
+    fn start(mut self, ctx: &Ctx) {
+        self.b.start(self.a, ctx);
     }
 }
 
@@ -99,6 +94,7 @@ impl<E> FreqConv<E> {
         }
     }
 }
+/*
 impl<E: Element> Element for FreqConv<E> {
     type Sink = E::Sink;
     type Src = E::Src;
@@ -106,6 +102,7 @@ impl<E: Element> Element for FreqConv<E> {
         self.source.next(sink)
     }
 }
+*/
 
 pub trait Sample {
     const MIN_LEVEL: Self;
@@ -121,43 +118,4 @@ impl Sample for f64 {
     const MIN_LEVEL: Self = -1f64;
     const MAX_LEVEL: Self = 1f64;
     const REF_LEVEL: Self = 0f64;
-}
-
-use std::ops::{Deref, DerefMut};
-struct WithFreq<E> {
-    element: E,
-    freq: u32
-}
-impl<E> WithFreq<E> {
-    fn new(element: E, freq: u32) -> Self {
-        Self {
-            element: element,
-            freq: freq
-        }
-    }
-}
-impl<E> Deref for WithFreq<E> {
-    type Target = E;
-    fn deref(&self) -> &Self::Target {
-        &self.element
-    }
-}
-impl<E> DerefMut for WithFreq<E> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.element
-    }
-}
-
-impl<E: Element> Element for WithFreq<E> {
-    type Sink = E::Sink;
-    type Src = E::Src;
-    fn next(&mut self, sink: Self::Sink) -> Self::Src {
-        self.element.next(sink)
-    }
-}
-
-trait SetFreq where Self: Sized {
-    fn set_freq(self, freq: u32) -> WithFreq<Self> {
-        WithFreq::new(self, freq)
-    }
 }
