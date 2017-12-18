@@ -60,8 +60,6 @@ where A: Element<(), Ctx> + Send + Sync + 'static,
     }
 }
 
-// core macros
-
 #[macro_export]
 macro_rules! pipe {
     ( $e1:expr, $e2:expr ) => {
@@ -75,6 +73,28 @@ macro_rules! pipe {
         p
     }}
 }
+
+// context
+pub trait FreqCtx {
+    fn get_freq(&self) -> u32;
+}
+pub struct Context {
+    freq: u32
+}
+impl Context {
+    pub fn new(freq: u32) -> Self {
+        Self {
+            freq: freq
+        }
+    } 
+}
+impl FreqCtx for Context {
+    fn get_freq(&self) -> u32 {
+        self.freq
+    }
+}
+
+// others
 
 pub struct FreqConv<E> {
     source: E,
@@ -103,19 +123,3 @@ impl<E: Element> Element for FreqConv<E> {
     }
 }
 */
-
-pub trait Sample {
-    const MIN_LEVEL: Self;
-    const MAX_LEVEL: Self;
-    const REF_LEVEL: Self;
-}
-impl Sample for i32 {
-    const MIN_LEVEL: Self = std::i32::MIN;
-    const MAX_LEVEL: Self = std::i32::MAX;
-    const REF_LEVEL: Self = 0i32;
-}
-impl Sample for f64 {
-    const MIN_LEVEL: Self = -1f64;
-    const MAX_LEVEL: Self = 1f64;
-    const REF_LEVEL: Self = 0f64;
-}

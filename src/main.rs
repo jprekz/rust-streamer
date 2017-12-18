@@ -8,18 +8,17 @@ fn main() {
 
     let ident = Ident::new();
 
-    let tee = Tee::new(|x| {println!("{:?}", x)});
+    //let tee = Tee::new(|x| {println!("{:?}", x)});
 
     //let sink = PrintSink::new();
     let sink = CpalSink::new();
 
-    let p = pipe!(source, ident, tee, sink);
+    let p = pipe!(source, ident, sink);
 
-    p.start(&());
+    p.start(&Context::new(48000));
 
     /*
     std::thread::spawn(move || {
-        p.start(&());
     });
     std::thread::sleep(std::time::Duration::from_millis(20000));
     */

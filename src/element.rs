@@ -64,7 +64,8 @@ impl CpalSink {
         }
     }
 }
-impl<Ctx> PullElement<WAVSample, Ctx> for CpalSink {
+impl<Ctx> PullElement<WAVSample, Ctx> for CpalSink
+where Ctx: FreqCtx {
     fn start<E>(&mut self, mut sink: E, ctx: &Ctx)
     where E: Element<(), Ctx, Src=WAVSample> + Send + Sync + 'static {
         use self::cpal::*;
@@ -72,7 +73,7 @@ impl<Ctx> PullElement<WAVSample, Ctx> for CpalSink {
         let endpoint = default_endpoint().expect("Failed to get default endpoint");
         let format = Format {
             channels: vec![ChannelPosition::FrontLeft, ChannelPosition::FrontRight],
-            samples_rate: SamplesRate(48000),
+            samples_rate: SamplesRate(ctx.get_freq()),
             data_type: SampleFormat::F32
         };
         let event_loop = EventLoop::new();
