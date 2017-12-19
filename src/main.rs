@@ -13,7 +13,7 @@ fn main() {
 
     let bc = FnElement::new(|x: WAVSample| {
         if let WAVSample::StereoI16 { l, r } = x {
-            WAVSample::StereoI16 { l: l & !0xfff, r: r & !0xfff }
+            WAVSample::StereoI16 { l: l & !0x3fff, r: r & !0x3fff }
         } else {
             panic!()
         }
