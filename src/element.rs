@@ -132,3 +132,19 @@ where F: Fn(T),
     }
 }
 
+pub struct FnElement<F> {
+    f: F
+}
+impl<F> FnElement<F> {
+    pub fn new(f: F) -> Self {
+        FnElement { f: f }
+    }
+}
+impl<T, Ctx, F> Element<T, Ctx> for FnElement<F>
+where F: Fn(T) -> T,
+      T: Copy {
+    type Src = T;
+    fn next(&mut self, sink: T, _ctx: &Ctx) -> T {
+        (self.f)(sink)
+    }
+}

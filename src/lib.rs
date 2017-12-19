@@ -1,6 +1,5 @@
 pub mod element;
-
-mod wav;
+pub mod wav;
 
 // core traits
 
