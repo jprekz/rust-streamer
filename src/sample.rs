@@ -1,5 +1,8 @@
 #[derive(Copy, Clone, Debug)]
-pub struct Stereo<T: SampleType> { l: T, r: T }
+pub struct Stereo<T: SampleType> {
+    pub l: T,
+    pub r: T
+}
 
 #[derive(Copy, Clone, Debug)]
 pub struct Mono<T: SampleType>(T);
@@ -17,7 +20,7 @@ impl<T: SampleType> Sample for Stereo<T> {
         self
     }
     fn to_mono(self) -> Mono<Self::Member> {
-        Mono((self.l + self.r) / 2 as Self::Member)
+        Mono((self.l + self.r) / Self::Member::from_i32(2))
     }
     fn from_raw(raw: &[Self::Member]) -> Option<Self> {
         if raw.len() != 2 { return None; }
@@ -45,31 +48,76 @@ impl<T: SampleType> Sample for Mono<T> {
     }
 }
 
+pub trait IntoSample<T> {
+    fn into_sample(self) -> T;
+}
+impl<S1, S2> IntoSample<Stereo<S2>> for Stereo<S1>
+where S1: SampleType + IntoSampleType<S2>,
+      S2: SampleType {
+    fn into_sample(self) -> Stereo<S2> {
+        Stereo { l: self.l.into_sampletype(), r: self.r.into_sampletype() }
+    }
+}
+impl<S1, S2> IntoSample<Mono<S2>> for Stereo<S1>
+where S1: SampleType + IntoSampleType<S2>,
+      S2: SampleType {
+    fn into_sample(self) -> Mono<S2> {
+        self.to_mono().into_sample()
+    }
+}
+impl<S1, S2> IntoSample<Mono<S2>> for Mono<S1>
+where S1: SampleType + IntoSampleType<S2>,
+      S2: SampleType {
+    fn into_sample(self) -> Mono<S2> {
+        Mono(self.0.into_sampletype())
+    }
+}
+impl<S1, S2> IntoSample<Stereo<S2>> for Mono<S1>
+where S1: SampleType + IntoSampleType<S2>,
+      S2: SampleType {
+    fn into_sample(self) -> Stereo<S2> {
+        self.to_stereo().into_sample()
+    }
+}
+
 use std::ops::*;
 pub trait SampleType : Copy + Add<Output=Self> + Sub<Output=Self> + Mul<Output=Self> + Div<Output=Self> {
     const MIN_LEVEL: Self;
     const MAX_LEVEL: Self;
     const REF_LEVEL: Self;
+    fn from_i32(i: i32) -> Self;
 }
 impl SampleType for i16 {
     const MIN_LEVEL: Self = ::std::i16::MIN;
     const MAX_LEVEL: Self = ::std::i16::MAX;
     const REF_LEVEL: Self = 0;
+    fn from_i32(i: i32) -> Self {
+        i as Self
+    }
 }
 impl SampleType for i32 {
     const MIN_LEVEL: Self = ::std::i32::MIN;
     const MAX_LEVEL: Self = ::std::i32::MAX;
     const REF_LEVEL: Self = 0;
+    fn from_i32(i: i32) -> Self {
+        i as Self
+    }
 }
 impl SampleType for f32 {
     const MIN_LEVEL: Self = -1f32;
     const MAX_LEVEL: Self = 1f32;
     const REF_LEVEL: Self = 0f32;
+    fn from_i32(i: i32) -> Self {
+        i as Self
+    }
 }
 impl SampleType for f64 {
     const MIN_LEVEL: Self = -1f64;
     const MAX_LEVEL: Self = 1f64;
     const REF_LEVEL: Self = 0f64;
+    fn from_i32(i: i32) -> Self {
+        i as Self
+    }
 }
 
 pub trait IntoSampleType<T: SampleType> : SampleType {

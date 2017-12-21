@@ -41,7 +41,7 @@ impl CpalSink {
     }
 }
 impl<S, Ctx> PullElement<S, Ctx> for CpalSink
-where S: Sample,
+where S: IntoSample<Stereo<f32>>,
       Ctx: FreqCtx {
     fn start<E>(&mut self, mut sink: E, ctx: &Ctx)
     where E: Element<(), Ctx, Src=S> + Send + Sync + 'static {
@@ -60,11 +60,9 @@ where S: Sample,
             match buffer {
                 UnknownTypeBuffer::F32(mut buffer) => {
                     for sample in buffer.chunks_mut(format.channels.len()) {
-                        let Stereo { l, r } = sink.next((), ctx).to_stereo();
-                        /*
+                        let Stereo { l, r } = sink.next((), ctx).into_sample();
                         sample[0] = l;
                         sample[1] = r;
-                        */
                     }
                 },
                 _ => panic!()
