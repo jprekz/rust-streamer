@@ -42,7 +42,7 @@ impl CpalSink {
 }
 impl<S, Ctx> PullElement<S, Ctx> for CpalSink
 where S: IntoSample<Stereo<f32>>,
-      Ctx: FreqCtx {
+      Ctx: FreqCtx + Sync {
     fn start<E>(&mut self, mut sink: E, ctx: &Ctx)
     where E: Element<(), Ctx, Src=S> + Send + Sync + 'static {
         use self::cpal::*;
