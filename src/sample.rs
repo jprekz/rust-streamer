@@ -3,9 +3,19 @@ pub struct Stereo<T: SampleType> {
     pub l: T,
     pub r: T
 }
+impl<T1: SampleType> Stereo<T1> {
+    pub fn map<T2: SampleType, F: Fn(T1) -> T2>(self, f: F) -> Stereo<T2> {
+        Stereo { l: f(self.l), r: f(self.r) }
+    }
+}
 
 #[derive(Copy, Clone, Debug)]
 pub struct Mono<T: SampleType>(T);
+impl<T1: SampleType> Mono<T1> {
+    pub fn map<T2: SampleType, F: Fn(T1) -> T2>(self, f: F) -> Mono<T2> {
+        Mono(f(self.0))
+    }
+}
 
 pub trait Sample : Copy {
     type Member: SampleType;

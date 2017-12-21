@@ -142,11 +142,12 @@ impl<F> FnElement<F> {
         FnElement { f: f }
     }
 }
-impl<T, Ctx, F> Element<T, Ctx> for FnElement<F>
-where F: Fn(T) -> T,
-      T: Copy {
-    type Src = T;
-    fn next(&mut self, sink: T, _ctx: &Ctx) -> T {
+impl<T1, T2, Ctx, F> Element<T1, Ctx> for FnElement<F>
+where F: Fn(T1) -> T2,
+      T1: Copy,
+      T2: Copy {
+    type Src = T2;
+    fn next(&mut self, sink: T1, _ctx: &Ctx) -> T2 {
         (self.f)(sink)
     }
 }

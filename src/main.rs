@@ -1,7 +1,6 @@
 extern crate rust_streamer;
 use rust_streamer::*;
 use rust_streamer::element::*;
-use rust_streamer::wav::*;
 use rust_streamer::sample::*;
 
 fn main() {
@@ -10,23 +9,20 @@ fn main() {
 
     let ident = Ident::new();
 
-    //let tee = Tee::new(|x| {println!("{:?}", x)});
 
-    /*
-    let bc = FnElement::new(|x: WAVSample| {
-        if let WAVSample::StereoI16 { l, r } = x {
-            WAVSample::StereoI16 { l: l & !0x3fff, r: r & !0x3fff }
-        } else {
-            panic!()
-        }
+    let bc = FnElement::new(|x: Stereo<f64>| {
+        let x: Stereo<i16> = x.into_sample();
+        let x: Stereo<i16> = x.map(|s: i16| { s & !0x3fff });
+        x
     });
-    */
+
+    let tee = Tee::new(|x| {println!("{:?}", x)});
 
     let sink = PrintSink::new();
     //let sink = CpalSink::new();
     //let sink = NullSink::new();
 
-    let p = pipe!(source, sink);
+    let p = pipe!(source, bc, tee, sink);
 
     p.start(&Context::new(48000));
 
