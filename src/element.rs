@@ -125,7 +125,7 @@ impl<F> Tee<F> {
     }
 }
 impl<T, Ctx, F> Element<T, Ctx> for Tee<F>
-where F: Fn(T),
+where F: FnMut(T),
       T: Copy {
     type Src = T;
     fn next(&mut self, sink: T, _ctx: &Ctx) -> T {
@@ -143,7 +143,7 @@ impl<F> FnElement<F> {
     }
 }
 impl<T1, T2, Ctx, F> Element<T1, Ctx> for FnElement<F>
-where F: Fn(T1) -> T2,
+where F: FnMut(T1) -> T2,
       T1: Copy,
       T2: Copy {
     type Src = T2;
