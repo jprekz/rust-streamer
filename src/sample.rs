@@ -15,7 +15,7 @@ impl<T1: SampleType> Stereo<T1> {
 
 
 #[derive(Copy, Clone, Debug)]
-pub struct Mono<T: SampleType>(T);
+pub struct Mono<T: SampleType>(pub T);
 
 impl<T1: SampleType> Mono<T1> {
     pub fn map<T2: SampleType, F: Fn(T1) -> T2>(self, f: F) -> Mono<T2> {
@@ -38,7 +38,10 @@ impl<T: SampleType> Sample for Stereo<T> {
         self
     }
     fn to_mono(self) -> Mono<Self::Member> {
-        Mono((self.l + self.r) / Self::Member::from_i32(2))
+        Mono(
+            self.l / Self::Member::from_i32(2) +
+            self.r / Self::Member::from_i32(2)
+        )
     }
     fn from_raw(raw: &[Self::Member]) -> Option<Self> {
         if raw.len() != 2 { return None; }
