@@ -85,7 +85,7 @@ impl WAV {
 
     pub fn get_sample_as<T>(&self, index: usize) -> Option<T>
     where T: Sample,
-          T::Member: From<i16> + From<i8> {
+          T::Member: FromSampleType<i16> {
         match (self.channels, self.bitswidth) {
             (2, 16) => {
                 if self.raw_data.len() < (index + 1) * 4 { return None; }
@@ -93,24 +93,27 @@ impl WAV {
                 let l = i16::from_le(unsafe {transmute(l)});
                 let r = [self.raw_data[index * 4 + 2], self.raw_data[index * 4 + 3]];
                 let r = i16::from_le(unsafe {transmute(r)});
-                T::from_raw(&[l.into(), r.into()])
+                T::from_raw(&[l.into_sampletype(), r.into_sampletype()])
             },
             (2, 8) => {
                 if self.raw_data.len() < (index + 1) * 2 { return None; }
                 let l = self.raw_data[index * 2 + 0] as i8;
+                let l = (l as i16) << 8;
                 let r = self.raw_data[index * 2 + 1] as i8;
-                T::from_raw(&[l.into(), r.into()])
+                let r = (r as i16) << 8;
+                T::from_raw(&[l.into_sampletype(), r.into_sampletype()])
             },
             (1, 16) => {
                 if self.raw_data.len() < (index + 1) * 2 { return None; }
                 let s = [self.raw_data[index * 2 + 0], self.raw_data[index * 2 + 1]];
                 let s = i16::from_le(unsafe {transmute(s)});
-                T::from_raw(&[s.into()])
+                T::from_raw(&[s.into_sampletype()])
             },
             (1, 8) => {
                 if self.raw_data.len() < (index + 1) { return None; }
                 let s = self.raw_data[index] as i8;
-                T::from_raw(&[s.into()])
+                let s = (s as i16) << 8;
+                T::from_raw(&[s.into_sampletype()])
             },
             _ => {panic!()}
         }

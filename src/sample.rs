@@ -1,21 +1,29 @@
+use std::ops::{Sub, Div, Mul, Add};
+
 #[derive(Copy, Clone, Debug)]
 pub struct Stereo<T: SampleType> {
     pub l: T,
     pub r: T
 }
+
 impl<T1: SampleType> Stereo<T1> {
     pub fn map<T2: SampleType, F: Fn(T1) -> T2>(self, f: F) -> Stereo<T2> {
         Stereo { l: f(self.l), r: f(self.r) }
     }
 }
 
+
+
 #[derive(Copy, Clone, Debug)]
 pub struct Mono<T: SampleType>(T);
+
 impl<T1: SampleType> Mono<T1> {
     pub fn map<T2: SampleType, F: Fn(T1) -> T2>(self, f: F) -> Mono<T2> {
         Mono(f(self.0))
     }
 }
+
+
 
 pub trait Sample : Copy {
     type Member: SampleType;
@@ -58,6 +66,8 @@ impl<T: SampleType> Sample for Mono<T> {
     }
 }
 
+
+
 pub trait IntoSample<T> {
     fn into_sample(self) -> T;
 }
@@ -90,7 +100,8 @@ where S1: SampleType + IntoSampleType<S2>,
     }
 }
 
-use std::ops::*;
+
+
 pub trait SampleType : Copy + Add<Output=Self> + Sub<Output=Self> + Mul<Output=Self> + Div<Output=Self> {
     const MIN_LEVEL: Self;
     const MAX_LEVEL: Self;
@@ -130,71 +141,86 @@ impl SampleType for f64 {
     }
 }
 
+
+
+pub trait FromSampleType<T: SampleType> : SampleType {
+    fn from_sampletype(T) -> Self;
+}
+
+/// should not directly implement this trait.
 pub trait IntoSampleType<T: SampleType> : SampleType {
     fn into_sampletype(self) -> T;
 }
-impl<T: SampleType> IntoSampleType<T> for T {
-    fn into_sampletype(self) -> T {
-        self
+
+impl<T, U> IntoSampleType<U> for T
+where U: FromSampleType<T>,
+      T: SampleType {
+    fn into_sampletype(self) -> U {
+        U::from_sampletype(self)
     }
 }
-impl IntoSampleType<i32> for i16 {
-    fn into_sampletype(self) -> i32 {
-        self as i32 * (i32::MAX_LEVEL / i16::MAX_LEVEL as i32)
+
+impl<T: SampleType> FromSampleType<T> for T {
+    fn from_sampletype(t: T) -> T { t }
+}
+
+impl FromSampleType<i16> for i32 {
+    fn from_sampletype(t: i16) -> i32 {
+        t as i32 * (i32::MAX_LEVEL / i16::MAX_LEVEL as i32)
     }
 }
-impl IntoSampleType<f32> for i16 {
-    fn into_sampletype(self) -> f32 {
-        self as f32 / i16::MAX_LEVEL as f32
+impl FromSampleType<i16> for f32 {
+    fn from_sampletype(t: i16) -> f32 {
+        t as f32 / i16::MAX_LEVEL as f32
     }
 }
-impl IntoSampleType<f64> for i16 {
-    fn into_sampletype(self) -> f64 {
-        self as f64 / i16::MAX_LEVEL as f64
+impl FromSampleType<i16> for f64 {
+    fn from_sampletype(t: i16) -> f64 {
+        t as f64 / i16::MAX_LEVEL as f64
     }
 }
-impl IntoSampleType<i16> for i32 {
-    fn into_sampletype(self) -> i16 {
-        (self / (i32::MAX_LEVEL / i16::MAX_LEVEL as i32)) as i16
+impl FromSampleType<i32> for i16 {
+    fn from_sampletype(t: i32) -> i16 {
+        (t / (i32::MAX_LEVEL / i16::MAX_LEVEL as i32)) as i16
     }
 }
-impl IntoSampleType<f32> for i32 {
-    fn into_sampletype(self) -> f32 {
-        self as f32 / i32::MAX_LEVEL as f32
+impl FromSampleType<i32> for f32 {
+    fn from_sampletype(t: i32) -> f32 {
+        t as f32 / i32::MAX_LEVEL as f32
     }
 }
-impl IntoSampleType<f64> for i32 {
-    fn into_sampletype(self) -> f64 {
-        self as f64 / i32::MAX_LEVEL as f64
+impl FromSampleType<i32> for f64 {
+    fn from_sampletype(t: i32) -> f64 {
+        t as f64 / i32::MAX_LEVEL as f64
     }
 }
-impl IntoSampleType<i16> for f32 {
-    fn into_sampletype(self) -> i16 {
-        (self * i16::MAX_LEVEL as f32) as i16
+impl FromSampleType<f32> for i16 {
+    fn from_sampletype(t: f32) -> i16 {
+        (t * i16::MAX_LEVEL as f32) as i16
     }
 }
-impl IntoSampleType<i32> for f32 {
-    fn into_sampletype(self) -> i32 {
-        (self * i32::MAX_LEVEL as f32) as i32
+impl FromSampleType<f32> for i32 {
+    fn from_sampletype(t: f32) -> i32 {
+        (t * i32::MAX_LEVEL as f32) as i32
     }
 }
-impl IntoSampleType<f64> for f32 {
-    fn into_sampletype(self) -> f64 {
-        self as f64
+impl FromSampleType<f32> for f64 {
+    fn from_sampletype(t: f32) -> f64 {
+        t as f64
     }
 }
-impl IntoSampleType<i16> for f64 {
-    fn into_sampletype(self) -> i16 {
-        (self * i16::MAX_LEVEL as f64) as i16
+impl FromSampleType<f64> for i16 {
+    fn from_sampletype(t: f64) -> i16 {
+        (t * i16::MAX_LEVEL as f64) as i16
     }
 }
-impl IntoSampleType<i32> for f64 {
-    fn into_sampletype(self) -> i32 {
-        (self * i32::MAX_LEVEL as f64) as i32
+impl FromSampleType<f64> for i32 {
+    fn from_sampletype(t: f64) -> i32 {
+        (t * i32::MAX_LEVEL as f64) as i32
     }
 }
-impl IntoSampleType<f32> for f64 {
-    fn into_sampletype(self) -> f32 {
-        self as f32
+impl FromSampleType<f64> for f32 {
+    fn from_sampletype(t: f64) -> f32 {
+        t as f32
     }
 }

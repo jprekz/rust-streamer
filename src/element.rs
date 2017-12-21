@@ -26,7 +26,7 @@ impl<Src> WAVSource<Src> {
 }
 impl<Ctx, Src> Element<(), Ctx> for WAVSource<Src>
 where Src: Sample,
-      Src::Member: From<i16> + From<i8> {
+      Src::Member: FromSampleType<i16> {
     type Src = Src;
     fn next(&mut self, _sink: (), _ctx: &Ctx) -> Src {
         self.pos += 1;
