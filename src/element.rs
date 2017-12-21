@@ -2,30 +2,35 @@ extern crate cpal;
 
 use super::*;
 use super::wav::*;
+use super::sample::*;
 
 use std::fs::File;
 
 // Input / Output
 
-pub struct WAVSource {
+pub struct WAVSource<Src> {
     wav: WAV,
     pos: usize,
+    src_type: ::std::marker::PhantomData<Src>
 }
-impl WAVSource {
+impl<Src> WAVSource<Src> {
     pub fn new(filename: &str) -> Self {
         let file = File::open(filename).unwrap();
         let wav = WAV::new(file);
         Self {
             wav: wav,
             pos: 0,
+            src_type: ::std::marker::PhantomData
         }
     }
 }
-impl<Ctx> Element<(), Ctx> for WAVSource {
-    type Src = WAVSample;
-    fn next(&mut self, _sink: (), _ctx: &Ctx) -> WAVSample {
+impl<Ctx, Src> Element<(), Ctx> for WAVSource<Src>
+where Src: Sample,
+      Src::Member: From<i16> + From<i8> {
+    type Src = Src;
+    fn next(&mut self, _sink: (), _ctx: &Ctx) -> Src {
         self.pos += 1;
-        self.wav.get_sample(self.pos - 1).unwrap()
+        self.wav.get_sample_as::<Src>(self.pos - 1).unwrap()
     }
 }
 
@@ -35,10 +40,11 @@ impl CpalSink {
         CpalSink {}
     }
 }
-impl<Ctx> PullElement<WAVSample, Ctx> for CpalSink
-where Ctx: FreqCtx {
+impl<S, Ctx> PullElement<S, Ctx> for CpalSink
+where S: Sample,
+      Ctx: FreqCtx {
     fn start<E>(&mut self, mut sink: E, ctx: &Ctx)
-    where E: Element<(), Ctx, Src=WAVSample> + Send + Sync + 'static {
+    where E: Element<(), Ctx, Src=S> + Send + Sync + 'static {
         use self::cpal::*;
 
         let endpoint = default_endpoint().expect("Failed to get default endpoint");
@@ -54,13 +60,11 @@ where Ctx: FreqCtx {
             match buffer {
                 UnknownTypeBuffer::F32(mut buffer) => {
                     for sample in buffer.chunks_mut(format.channels.len()) {
-                        let values = match sink.next((), ctx).to_float() {
-                            wav::WAVSample::StereoF64 {l, r} =>
-                                [l as f32, r as f32],
-                            _ => panic!(),
-                        };
-                        sample[0] = values[0];
-                        sample[1] = values[1];
+                        let Stereo { l, r } = sink.next((), ctx).to_stereo();
+                        /*
+                        sample[0] = l;
+                        sample[1] = r;
+                        */
                     }
                 },
                 _ => panic!()
