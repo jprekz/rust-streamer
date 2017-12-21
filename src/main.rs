@@ -8,7 +8,7 @@ fn main() {
     //let source = FreqConv::new(source);
 
     let bc = FnElement::new(|x: Stereo<i16>| {
-        x.map(|s: i16| { s & 0xc000 })
+        x.map(|s: i16| { s & !0x3fff })
     });
 
     //let tee = Tee::new(|x| {println!("{:?}", x)});
