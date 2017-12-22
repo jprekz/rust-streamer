@@ -11,27 +11,16 @@ fn main() {
         x.map(|s: i16| { s & !0x3fff })
     });
 
-    let mut b = [Stereo { l: 0, r: 0 }; 4];
+    let mut b = [Stereo { l: 0, r: 0 }; 8];
     let lp = FnElement::new(move |x: Stereo<i16>| {
         b.push(x);
-        Stereo {
-            l: b[0].l/4 + b[1].l/4 + b[2].l/4 + b[3].l/4,
-            r: b[0].r/4 + b[1].r/4 + b[2].r/4 + b[3].r/4
+        Stereo::<i16> {
+            l: b.iter().map(|s| { s.l / b.len() as i16 }).sum(),
+            r: b.iter().map(|s| { s.r / b.len() as i16 }).sum()
         }
     });
 
     //let tee = Tee::new(|x| {println!("{:?}", x)});
-
-    let mut buf = vec![0i16; 2048];
-    let mut ptr = 0usize;
-    let analyze = Tee::new(move |x: Stereo<i16>| {
-        buf[ptr] = x.l;
-        ptr += 1;
-        if ptr >= 2048 {
-            ptr = 0;
-            println!("{:?}", buf);
-        }
-    });
 
     //let sink = PrintSink::new();
     let sink = CpalSink::new();
