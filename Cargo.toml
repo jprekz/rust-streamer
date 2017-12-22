@@ -3,6 +3,12 @@ name = "rust-streamer"
 version = "0.1.0"
 authors = ["jprekz <jprekz@users.noreply.github.com>"]
 
+[features]
+default = []
+graphic = ["piston_window"]
+
 [dependencies]
 cpal = "*"
 num = "0.1"
+
+piston_window = { version = "0.70.0", optional = true }

@@ -151,3 +151,56 @@ where F: FnMut(T1) -> T2,
         (self.f)(sink)
     }
 }
+
+
+
+#[cfg(feature = "graphic")]
+pub mod graphic {
+    extern crate piston_window;
+    use self::piston_window::*;
+
+    use super::*;
+    use super::sample::*;
+
+    use std::sync::{Arc, Mutex};
+
+    pub struct Oscillo {
+        data: Arc<Mutex<Vec<f64>>>
+    }
+    impl Oscillo {
+        pub fn new(len: usize) -> Self {
+            let data = Arc::new(Mutex::new(vec![0f64; len]));
+            let data_move = data.clone();
+            std::thread::spawn(move || {
+                let mut window: PistonWindow =
+                    WindowSettings::new("Hello Piston!", [640, 480])
+                    .exit_on_esc(true).build().unwrap();
+                while let Some(event) = window.next() {
+                    let data = {
+                        data_move.lock().unwrap().clone()
+                    };
+                    window.draw_2d(&event, |context, graphics| {
+                        clear([0.0, 0.0, 0.0, 1.0], graphics);
+                        for (i, d) in data.iter().enumerate() {
+                            rectangle([1.0, 1.0, 1.0, 1.0],
+                                [i as f64, (d + 1.0) * 200.0, 1.0, 1.0],
+                                context.transform,
+                                graphics);
+                        }
+                    });
+                }
+            });
+            Self {
+                data: data
+            }
+        }
+    }
+    impl<T, Ctx> Element<T, Ctx> for Oscillo 
+    where T: IntoSample<Stereo<f64>> + Copy {
+        type Src = T;
+        fn next(&mut self, sink: T, _ctx: &Ctx) -> T {
+            self.data.lock().unwrap().as_mut_slice().push(sink.into_sample().l);
+            sink
+        }
+    }
+}

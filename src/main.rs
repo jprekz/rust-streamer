@@ -1,6 +1,7 @@
 extern crate rust_streamer;
 use rust_streamer::*;
 use rust_streamer::element::*;
+use rust_streamer::element::graphic::*;
 use rust_streamer::sample::*;
 
 fn main() {
@@ -10,6 +11,9 @@ fn main() {
     let bc = FnElement::new(|x: Stereo<i16>| {
         x.map(|s: i16| { s & !0x3fff })
     });
+
+    let oscillo = Oscillo::new(200);
+    let oscillo2 = Oscillo::new(200);
 
     let mut b = [Stereo { l: 0, r: 0 }; 8];
     let lp = FnElement::new(move |x: Stereo<i16>| {
@@ -25,7 +29,7 @@ fn main() {
     //let sink = PrintSink::new();
     let sink = CpalSink::new();
 
-    let p = pipe!(source, lp, sink);
+    let p = pipe!(source, oscillo, lp, oscillo2, sink);
 
     p.start(&Context::new(48000));
 }
