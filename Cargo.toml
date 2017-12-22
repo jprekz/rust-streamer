@@ -5,3 +5,4 @@ authors = ["jprekz <jprekz@users.noreply.github.com>"]
 
 [dependencies]
 cpal = "*"
+num = "0.1"
