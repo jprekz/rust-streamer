@@ -75,9 +75,7 @@ macro_rules! pipe {
 }
 
 // context
-pub trait FreqCtx {
-    fn get_freq(&self) -> u32;
-}
+
 pub struct Context {
     freq: u32
 }
@@ -88,13 +86,31 @@ impl Context {
         }
     } 
 }
+pub trait FreqCtx {
+    fn get_freq(&self) -> u32;
+}
 impl FreqCtx for Context {
     fn get_freq(&self) -> u32 {
         self.freq
     }
 }
 
-// others
+// other
+
+pub trait FixedQueue {
+    type T;
+    fn push(&mut self, item: Self::T);
+}
+impl<T: Copy> FixedQueue for [T] {
+    type T = T;
+    fn push(&mut self, item: T) {
+        let len = self.len();
+        for i in 0 .. len - 1 {
+            self[i] = self[i + 1];
+        }
+        self[len - 1] = item;
+    }
+}
 
 pub struct FreqConv<E> {
     source: E,

@@ -13,10 +13,7 @@ fn main() {
 
     let mut b = [Stereo { l: 0, r: 0 }; 4];
     let lp = FnElement::new(move |x: Stereo<i16>| {
-        b[0] = b[1];
-        b[1] = b[2];
-        b[2] = b[3];
-        b[3] = x;
+        b.push(x);
         Stereo {
             l: b[0].l/4 + b[1].l/4 + b[2].l/4 + b[3].l/4,
             r: b[0].r/4 + b[1].r/4 + b[2].r/4 + b[3].r/4
