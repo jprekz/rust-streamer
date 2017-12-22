@@ -13,15 +13,14 @@ fn main() {
 
     let mut b = [Stereo { l: 0, r: 0 }; 4];
     let lp = FnElement::new(move |x: Stereo<i16>| {
-        let next = Stereo {
-            l: x.l/5 + b[0].l/5 + b[1].l/5 + b[2].l/5 + b[3].l/5,
-            r: x.r/5 + b[0].r/5 + b[1].r/5 + b[2].r/5 + b[3].r/5
-        };
         b[0] = b[1];
         b[1] = b[2];
         b[2] = b[3];
         b[3] = x;
-        next
+        Stereo {
+            l: b[0].l/4 + b[1].l/4 + b[2].l/4 + b[3].l/4,
+            r: b[0].r/4 + b[1].r/4 + b[2].r/4 + b[3].r/4
+        }
     });
 
     //let tee = Tee::new(|x| {println!("{:?}", x)});
