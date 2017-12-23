@@ -1,8 +1,8 @@
 extern crate rust_streamer;
 use rust_streamer::*;
 use rust_streamer::element::*;
-use rust_streamer::element::graphic::*;
 use rust_streamer::sample::*;
+use rust_streamer::graphic::*;
 
 fn main() {
     let source = WAVSource::new("test85.wav");
