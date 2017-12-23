@@ -44,7 +44,7 @@ impl<S, Ctx> PullElement<S, Ctx> for CpalSink
 where S: IntoSample<Stereo<f32>>,
       Ctx: FreqCtx + Sync {
     fn start<E>(&mut self, mut sink: E, ctx: &Ctx)
-    where E: Element<(), Ctx, Src=S> + Send + Sync + 'static {
+    where E: Element<(), Ctx, Src=S> + Send {
         use self::cpal::*;
 
         let endpoint = default_endpoint().expect("Failed to get default endpoint");

@@ -10,18 +10,22 @@ pub trait Element<Sink, Ctx> {
 }
 pub trait PullElement<Sink, Ctx> {
     fn start<E>(&mut self, sink: E, ctx: &Ctx)
-        where E: Element<(), Ctx, Src=Sink> + Send + Sync + 'static;
+        where E: Element<(), Ctx, Src=Sink> + Send;
     fn stop(&mut self);
 }
-pub trait PushElement<Src, Ctx> {
+pub trait PushElement<Ctx> {
+    type Src;
     fn start<E>(&mut self, src: E, ctx: &Ctx)
-        where E: Element<Src, Ctx, Src=()> + Send + Sync + 'static;
+        where E: Element<Self::Src, Ctx, Src=()> + Send;
     fn stop(&mut self);
 }
 pub trait Pipeline<Ctx> {
     fn start(self, ctx: &Ctx);
 }
 pub trait SinkPipeline<Ctx> {
+    fn start(self, ctx: &Ctx);
+}
+pub trait SrcPipeline<Ctx> {
     fn start(self, ctx: &Ctx);
 }
 
@@ -53,10 +57,17 @@ where Self: Element<(), Ctx, Src=()> {
     }
 }
 impl<A, B, Ctx> SinkPipeline<Ctx> for Pipe<A, B>
-where A: Element<(), Ctx> + Send + Sync + 'static,
+where A: Element<(), Ctx> + Send,
       B: PullElement<A::Src, Ctx> {
     fn start(mut self, ctx: &Ctx) {
         self.b.start(self.a, ctx);
+    }
+}
+impl<A, B, Ctx> SrcPipeline<Ctx> for Pipe<A, B>
+where A: PushElement<Ctx>,
+      B: Element<A::Src, Ctx, Src=()> + Send {
+    fn start(mut self, ctx: &Ctx) {
+        self.a.start(self.b, ctx);
     }
 }
 
