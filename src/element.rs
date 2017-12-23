@@ -175,7 +175,7 @@ pub mod graphic {
             let data_move = data.clone();
             std::thread::spawn(move || {
                 let mut window: PistonWindow =
-                    WindowSettings::new("Hello Piston!", [640, 480])
+                    WindowSettings::new("Oscilloscope", [640, 480])
                     .exit_on_esc(true).build().unwrap();
                 while let Some(event) = window.next() {
                     let data = {
