@@ -165,7 +165,9 @@ pub mod graphic {
     use std::sync::{Arc, Mutex};
 
     pub struct Oscillo {
-        data: Arc<Mutex<Vec<f64>>>
+        shared_data: Arc<Mutex<Vec<f64>>>,
+        local_data: Vec<f64>,
+        ptr: usize
     }
     impl Oscillo {
         pub fn new(len: usize) -> Self {
@@ -191,7 +193,9 @@ pub mod graphic {
                 }
             });
             Self {
-                data: data
+                shared_data: data,
+                local_data: vec![0f64; len],
+                ptr: 0
             }
         }
     }
@@ -199,7 +203,12 @@ pub mod graphic {
     where T: IntoSample<Stereo<f64>> + Copy {
         type Src = T;
         fn next(&mut self, sink: T, _ctx: &Ctx) -> T {
-            self.data.lock().unwrap().as_mut_slice().push(sink.into_sample().l);
+            self.local_data[self.ptr] = sink.into_sample().l;
+            self.ptr += 1;
+            if self.ptr >= self.local_data.len() {
+                self.ptr = 0;
+                self.shared_data.lock().unwrap().copy_from_slice(&self.local_data);
+            }
             sink
         }
     }

@@ -12,8 +12,8 @@ fn main() {
         x.map(|s: i16| { s & !0x3fff })
     });
 
-    let oscillo = Oscillo::new(200);
-    let oscillo2 = Oscillo::new(200);
+    let oscillo = Oscillo::new(640);
+    let oscillo2 = Oscillo::new(640);
 
     let mut b = [Stereo { l: 0, r: 0 }; 8];
     let lp = FnElement::new(move |x: Stereo<i16>| {
