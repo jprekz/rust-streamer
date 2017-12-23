@@ -183,11 +183,11 @@ pub mod graphic {
                     };
                     window.draw_2d(&event, |context, graphics| {
                         clear([0.0, 0.0, 0.0, 1.0], graphics);
-                        for (i, d) in data.iter().enumerate() {
-                            rectangle([1.0, 1.0, 1.0, 1.0],
-                                [i as f64, (d + 1.0) * 200.0, 1.0, 1.0],
-                                context.transform,
-                                graphics);
+                        for i in 0 .. data.len() - 1 {
+                            line([0.0, 1.0, 1.0, 1.0], 1.0,
+                                [i as f64, (data[i] + 1.0) * 240.0,
+                                 (i+1) as f64, (data[i+1] + 1.0) * 240.0],
+                                context.transform, graphics);
                         }
                     });
                 }
