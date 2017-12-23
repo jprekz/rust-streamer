@@ -13,7 +13,7 @@ pub fn fft(samples: Vec<f64>) -> Vec<f64> {
         x.push(Complex64::new(samples[i], 0f64));
     }
 
-    for stage in 1..stages+1 {
+    for stage in 1..stages + 1 {
         for i in 0..2i32.pow(stage - 1) {
             for j in 0..2i32.pow(stages - stage) {
                 let n = (2i32.pow(stages - stage + 1) * i + j) as usize;
@@ -24,7 +24,7 @@ pub fn fft(samples: Vec<f64>) -> Vec<f64> {
                 let b = x[m];
                 let c = Complex64::new(
                     ((2.0 * PI * r) / len as f64).cos(),
-                    -((2.0 * PI * r) / len as f64).sin()
+                    -((2.0 * PI * r) / len as f64).sin(),
                 );
 
                 if stage < stages {
@@ -39,9 +39,10 @@ pub fn fft(samples: Vec<f64>) -> Vec<f64> {
     }
 
     let mut index = vec![0 as usize; len];
-    for stage in 1..stages+1 {
+    for stage in 1..stages + 1 {
         for i in 0..2i32.pow(stage - 1) {
-            index[(2i32.pow(stage - 1) + i) as usize] = index[i as usize] + 2i32.pow(stages - stage) as usize;
+            index[(2i32.pow(stage - 1) + i) as usize] =
+                index[i as usize] + 2i32.pow(stages - stage) as usize;
         }
     }
 
@@ -62,4 +63,3 @@ pub fn blackman_harris(x: f64) -> f64 {
         + 0.14128 * (4.0 * PI * x).cos()
         - 0.01168 * (6.0 * PI * x).cos()
 }
-

@@ -1,14 +1,17 @@
-use std::ops::{Sub, Div, Mul, Add};
+use std::ops::{Add, Div, Mul, Sub};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Stereo<T: SampleType> {
     pub l: T,
-    pub r: T
+    pub r: T,
 }
 
 impl<T1: SampleType> Stereo<T1> {
     pub fn map<T2: SampleType, F: Fn(T1) -> T2>(self, f: F) -> Stereo<T2> {
-        Stereo { l: f(self.l), r: f(self.r) }
+        Stereo {
+            l: f(self.l),
+            r: f(self.r),
+        }
     }
 }
 
@@ -25,7 +28,7 @@ impl<T1: SampleType> Mono<T1> {
 
 
 
-pub trait Sample : Copy {
+pub trait Sample: Copy {
     type Member: SampleType;
     fn to_stereo(self) -> Stereo<Self::Member>;
     fn to_mono(self) -> Mono<Self::Member>;
@@ -44,10 +47,12 @@ impl<T: SampleType> Sample for Stereo<T> {
         )
     }
     fn from_raw(raw: &[Self::Member]) -> Option<Self> {
-        if raw.len() != 2 { return None; }
+        if raw.len() != 2 {
+            return None;
+        }
         Some(Stereo {
             l: raw[0],
-            r: raw[1]
+            r: raw[1],
         })
     }
 }
@@ -57,14 +62,16 @@ impl<T: SampleType> Sample for Mono<T> {
     fn to_stereo(self) -> Stereo<Self::Member> {
         Stereo {
             l: self.0,
-            r: self.0
+            r: self.0,
         }
     }
     fn to_mono(self) -> Mono<Self::Member> {
         self
     }
     fn from_raw(raw: &[Self::Member]) -> Option<Self> {
-        if raw.len() != 1 { return None; }
+        if raw.len() != 1 {
+            return None;
+        }
         Some(Mono(raw[0]))
     }
 }
@@ -75,29 +82,40 @@ pub trait IntoSample<T> {
     fn into_sample(self) -> T;
 }
 impl<S1, S2> IntoSample<Stereo<S2>> for Stereo<S1>
-where S1: SampleType + IntoSampleType<S2>,
-      S2: SampleType {
+where
+    S1: SampleType + IntoSampleType<S2>,
+    S2: SampleType,
+{
     fn into_sample(self) -> Stereo<S2> {
-        Stereo { l: self.l.into_sampletype(), r: self.r.into_sampletype() }
+        Stereo {
+            l: self.l.into_sampletype(),
+            r: self.r.into_sampletype(),
+        }
     }
 }
 impl<S1, S2> IntoSample<Mono<S2>> for Stereo<S1>
-where S1: SampleType + IntoSampleType<S2>,
-      S2: SampleType {
+where
+    S1: SampleType + IntoSampleType<S2>,
+    S2: SampleType,
+{
     fn into_sample(self) -> Mono<S2> {
         self.to_mono().into_sample()
     }
 }
 impl<S1, S2> IntoSample<Mono<S2>> for Mono<S1>
-where S1: SampleType + IntoSampleType<S2>,
-      S2: SampleType {
+where
+    S1: SampleType + IntoSampleType<S2>,
+    S2: SampleType,
+{
     fn into_sample(self) -> Mono<S2> {
         Mono(self.0.into_sampletype())
     }
 }
 impl<S1, S2> IntoSample<Stereo<S2>> for Mono<S1>
-where S1: SampleType + IntoSampleType<S2>,
-      S2: SampleType {
+where
+    S1: SampleType + IntoSampleType<S2>,
+    S2: SampleType,
+{
     fn into_sample(self) -> Stereo<S2> {
         self.to_stereo().into_sample()
     }
@@ -105,7 +123,9 @@ where S1: SampleType + IntoSampleType<S2>,
 
 
 
-pub trait SampleType : Copy + Add<Output=Self> + Sub<Output=Self> + Mul<Output=Self> + Div<Output=Self> {
+pub trait SampleType
+    : Copy + Add<Output = Self> + Sub<Output = Self> + Mul<Output = Self> + Div<Output = Self>
+    {
     const MIN_LEVEL: Self;
     const MAX_LEVEL: Self;
     const REF_LEVEL: Self;
@@ -146,25 +166,29 @@ impl SampleType for f64 {
 
 
 
-pub trait FromSampleType<T: SampleType> : SampleType {
+pub trait FromSampleType<T: SampleType>: SampleType {
     fn from_sampletype(T) -> Self;
 }
 
 /// should not directly implement this trait.
-pub trait IntoSampleType<T: SampleType> : SampleType {
+pub trait IntoSampleType<T: SampleType>: SampleType {
     fn into_sampletype(self) -> T;
 }
 
 impl<T, U> IntoSampleType<U> for T
-where U: FromSampleType<T>,
-      T: SampleType {
+where
+    U: FromSampleType<T>,
+    T: SampleType,
+{
     fn into_sampletype(self) -> U {
         U::from_sampletype(self)
     }
 }
 
 impl<T: SampleType> FromSampleType<T> for T {
-    fn from_sampletype(t: T) -> T { t }
+    fn from_sampletype(t: T) -> T {
+        t
+    }
 }
 
 impl FromSampleType<i16> for i32 {

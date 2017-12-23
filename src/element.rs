@@ -11,7 +11,7 @@ use std::fs::File;
 pub struct WAVSource<Src> {
     wav: WAV,
     pos: usize,
-    src_type: ::std::marker::PhantomData<Src>
+    src_type: ::std::marker::PhantomData<Src>,
 }
 impl<Src> WAVSource<Src> {
     pub fn new(filename: &str) -> Self {
@@ -20,13 +20,15 @@ impl<Src> WAVSource<Src> {
         Self {
             wav: wav,
             pos: 0,
-            src_type: ::std::marker::PhantomData
+            src_type: ::std::marker::PhantomData,
         }
     }
 }
 impl<Ctx, Src> Element<(), Ctx> for WAVSource<Src>
-where Src: Sample,
-      Src::Member: FromSampleType<i16> {
+where
+    Src: Sample,
+    Src::Member: FromSampleType<i16>,
+{
     type Src = Src;
     fn next(&mut self, _sink: (), _ctx: &Ctx) -> Src {
         self.pos += 1;
@@ -41,20 +43,26 @@ impl CpalSink {
     }
 }
 impl<S, Ctx> PullElement<S, Ctx> for CpalSink
-where S: IntoSample<Stereo<f32>>,
-      Ctx: FreqCtx + Sync {
+where
+    S: IntoSample<Stereo<f32>>,
+    Ctx: FreqCtx + Sync,
+{
     fn start<E>(&mut self, mut sink: E, ctx: &Ctx)
-    where E: Element<(), Ctx, Src=S> + Send {
+    where
+        E: Element<(), Ctx, Src = S> + Send,
+    {
         use self::cpal::*;
 
         let endpoint = default_endpoint().expect("Failed to get default endpoint");
         let format = Format {
             channels: vec![ChannelPosition::FrontLeft, ChannelPosition::FrontRight],
             samples_rate: SamplesRate(ctx.get_freq()),
-            data_type: SampleFormat::F32
+            data_type: SampleFormat::F32,
         };
         let event_loop = EventLoop::new();
-        let voice_id = event_loop.build_voice(&endpoint, &format).expect("Failed to build voice");
+        let voice_id = event_loop
+            .build_voice(&endpoint, &format)
+            .expect("Failed to build voice");
         event_loop.play(voice_id);
         event_loop.run(move |_, buffer| {
             match buffer {
@@ -64,8 +72,8 @@ where S: IntoSample<Stereo<f32>>,
                         sample[0] = l;
                         sample[1] = r;
                     }
-                },
-                _ => panic!()
+                }
+                _ => panic!(),
             };
         });
     }
@@ -94,7 +102,9 @@ impl PrintSink {
     }
 }
 impl<T, Ctx> Element<T, Ctx> for PrintSink
-where T: std::fmt::Debug {
+where
+    T: std::fmt::Debug,
+{
     type Src = ();
     fn next(&mut self, sink: T, _ctx: &Ctx) {
         println!("{:?}", sink);
@@ -106,7 +116,7 @@ where T: std::fmt::Debug {
 pub struct Ident;
 impl Ident {
     pub fn new() -> Self {
-        Self{}
+        Self {}
     }
 }
 impl<T, Ctx> Element<T, Ctx> for Ident {
@@ -117,7 +127,7 @@ impl<T, Ctx> Element<T, Ctx> for Ident {
 }
 
 pub struct Tee<F> {
-    f: F
+    f: F,
 }
 impl<F> Tee<F> {
     pub fn new(f: F) -> Self {
@@ -125,8 +135,10 @@ impl<F> Tee<F> {
     }
 }
 impl<T, Ctx, F> Element<T, Ctx> for Tee<F>
-where F: FnMut(T),
-      T: Copy {
+where
+    F: FnMut(T),
+    T: Copy,
+{
     type Src = T;
     fn next(&mut self, sink: T, _ctx: &Ctx) -> T {
         (self.f)(sink);
@@ -135,7 +147,7 @@ where F: FnMut(T),
 }
 
 pub struct FnElement<F> {
-    f: F
+    f: F,
 }
 impl<F> FnElement<F> {
     pub fn new(f: F) -> Self {
@@ -143,9 +155,11 @@ impl<F> FnElement<F> {
     }
 }
 impl<T1, T2, Ctx, F> Element<T1, Ctx> for FnElement<F>
-where F: FnMut(T1) -> T2,
-      T1: Copy,
-      T2: Copy {
+where
+    F: FnMut(T1) -> T2,
+    T1: Copy,
+    T2: Copy,
+{
     type Src = T2;
     fn next(&mut self, sink: T1, _ctx: &Ctx) -> T2 {
         (self.f)(sink)
@@ -160,34 +174,40 @@ pub mod graphic {
     use self::piston_window::*;
 
     use super::*;
-    use super::sample::*;
 
     use std::sync::{Arc, Mutex};
 
     pub struct Oscillo {
         shared_data: Arc<Mutex<Vec<f64>>>,
         local_data: Vec<f64>,
-        ptr: usize
+        ptr: usize,
     }
     impl Oscillo {
         pub fn new(len: usize) -> Self {
             let data = Arc::new(Mutex::new(vec![0f64; len]));
             let data_move = data.clone();
             std::thread::spawn(move || {
-                let mut window: PistonWindow =
-                    WindowSettings::new("Oscilloscope", [640, 480])
-                    .exit_on_esc(true).build().unwrap();
+                let mut window: PistonWindow = WindowSettings::new("Oscilloscope", [640, 480])
+                    .exit_on_esc(true)
+                    .build()
+                    .unwrap();
                 while let Some(event) = window.next() {
-                    let data = {
-                        data_move.lock().unwrap().clone()
-                    };
+                    let data = { data_move.lock().unwrap().clone() };
                     window.draw_2d(&event, |context, graphics| {
                         clear([0.0, 0.0, 0.0, 1.0], graphics);
-                        for i in 0 .. data.len() - 1 {
-                            line([0.0, 1.0, 1.0, 1.0], 1.0,
-                                [i as f64, (data[i] + 1.0) * 240.0,
-                                 (i+1) as f64, (data[i+1] + 1.0) * 240.0],
-                                context.transform, graphics);
+                        for i in 0..data.len() - 1 {
+                            line(
+                                [0.0, 1.0, 1.0, 1.0],
+                                1.0,
+                                [
+                                    i as f64,
+                                    (data[i] + 1.0) * 240.0,
+                                    (i + 1) as f64,
+                                    (data[i + 1] + 1.0) * 240.0,
+                                ],
+                                context.transform,
+                                graphics,
+                            );
                         }
                     });
                 }
@@ -195,19 +215,24 @@ pub mod graphic {
             Self {
                 shared_data: data,
                 local_data: vec![0f64; len],
-                ptr: 0
+                ptr: 0,
             }
         }
     }
-    impl<T, Ctx> Element<T, Ctx> for Oscillo 
-    where T: IntoSample<Stereo<f64>> + Copy {
+    impl<T, Ctx> Element<T, Ctx> for Oscillo
+    where
+        T: IntoSample<Stereo<f64>> + Copy,
+    {
         type Src = T;
         fn next(&mut self, sink: T, _ctx: &Ctx) -> T {
             self.local_data[self.ptr] = sink.into_sample().l;
             self.ptr += 1;
             if self.ptr >= self.local_data.len() {
                 self.ptr = 0;
-                self.shared_data.lock().unwrap().copy_from_slice(&self.local_data);
+                self.shared_data
+                    .lock()
+                    .unwrap()
+                    .copy_from_slice(&self.local_data);
             }
             sink
         }
