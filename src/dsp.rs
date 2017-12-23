@@ -57,6 +57,14 @@ pub fn fft(samples: Vec<f64>) -> Vec<f64> {
     x.into_iter().map(|a| a.norm()).collect()
 }
 
+pub fn apply_window<F: Fn(f64) -> f64>(mut data: Vec<f64>, f: F) -> Vec<f64> {
+    let len = data.len();
+    for i in 0..len {
+        data[i] = data[i] * f(i as f64 / len as f64);
+    }
+    data
+}
+
 pub fn blackman_harris(x: f64) -> f64 {
     0.35875
         - 0.48829 * (2.0 * PI * x).cos()

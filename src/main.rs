@@ -12,8 +12,10 @@ fn main() {
         x.map(|s: i16| { s & !0x1fff })
     });
 
-    let oscillo = Oscillo::new(640);
-    let oscillo2 = Oscillo::new(640);
+    //let oscillo = Oscillo::new(640);
+    let spectrum = Spectrum::new(1024);
+    //let oscillo2 = Oscillo::new(640);
+    let spectrum2 = Spectrum::new(1024);
 
     let mut b = [Stereo { l: 0, r: 0 }; 8];
     let lp = FnElement::new(move |x: Stereo<i16>| {
@@ -29,7 +31,7 @@ fn main() {
     //let sink = PrintSink::new();
     let sink = CpalSink::new();
 
-    let p = pipe!(source, oscillo, bc, lp, oscillo2, sink);
+    let p = pipe!(source, spectrum, lp, spectrum2, sink);
 
     p.start(&Context::new(44100));
 }

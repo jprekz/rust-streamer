@@ -1,6 +1,7 @@
 pub mod element;
 pub mod wav;
 pub mod sample;
+pub mod dsp;
 
 // core traits
 
