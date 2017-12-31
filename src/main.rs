@@ -8,14 +8,20 @@ fn main() {
     let source = WAVSource::new("test85.wav");
     //let source = FreqConv::new(source);
 
+    let mut a = 0usize;
+    let osc = FnElement::new(move |_: ()| -> Stereo<i16> {
+        a += 1;
+        Mono::<f64>::from_raw(&[(a as f64 / 20.0).sin()]).unwrap().into_sample()
+    });
+
     let bc = FnElement::new(|x: Stereo<i16>| {
         x.map(|s: i16| { s & !0x1fff })
     });
 
-    //let oscillo = Oscillo::new(640);
-    let spectrum = Spectrum::new(1024);
-    //let oscillo2 = Oscillo::new(640);
-    let spectrum2 = Spectrum::new(1024);
+    let oscillo = Oscillo::new(640);
+    //let spectrum = Spectrum::new(1024*2);
+    let oscillo2 = Oscillo::new(640);
+    //let spectrum2 = Spectrum::new(1024*2);
 
     let mut b = [Stereo { l: 0, r: 0 }; 8];
     let lp = FnElement::new(move |x: Stereo<i16>| {
@@ -31,7 +37,7 @@ fn main() {
     //let sink = PrintSink::new();
     let sink = CpalSink::new();
 
-    let p = pipe!(source, spectrum, lp, spectrum2, sink);
+    let p = pipe!(source, oscillo, bc, lp, oscillo2, sink);
 
     p.start(&Context::new(44100));
 }
