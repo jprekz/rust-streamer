@@ -7,6 +7,12 @@ pub struct Stereo<T: SampleType> {
 }
 
 impl<T1: SampleType> Stereo<T1> {
+    pub fn new(s: T1) -> Self {
+        Stereo {
+            l: s,
+            r: s,
+        }
+    }
     pub fn map<T2: SampleType, F: Fn(T1) -> T2>(self, f: F) -> Stereo<T2> {
         Stereo {
             l: f(self.l),
@@ -21,6 +27,9 @@ impl<T1: SampleType> Stereo<T1> {
 pub struct Mono<T: SampleType>(pub T);
 
 impl<T1: SampleType> Mono<T1> {
+    pub fn new(s: T1) -> Self {
+        Mono(s)
+    }
     pub fn map<T2: SampleType, F: Fn(T1) -> T2>(self, f: F) -> Mono<T2> {
         Mono(f(self.0))
     }

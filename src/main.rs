@@ -11,7 +11,7 @@ fn main() {
     let mut a = 0usize;
     let osc = FnElement::new(move |_: ()| -> Stereo<i16> {
         a += 1;
-        Mono::<f64>::from_raw(&[(a as f64 / 20.0).sin()]).unwrap().into_sample()
+        Mono::new((a as f64 / 20.0).sin()).into_sample()
     });
 
     let bc = FnElement::new(|x: Stereo<i16>| {
