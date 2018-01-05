@@ -36,6 +36,33 @@ where
     }
 }
 
+pub struct SineWave<Src> {
+    freq: f64,
+    pos: usize,
+    src_type: ::std::marker::PhantomData<Src>,
+}
+impl<Src> SineWave<Src> {
+    pub fn new(freq: f64) -> Self {
+        Self {
+            freq: freq,
+            pos: 0,
+            src_type: ::std::marker::PhantomData,
+        }
+    }
+}
+impl<Ctx, Src> Element<(), Ctx> for SineWave<Src>
+where
+    Ctx: FreqCtx,
+    Mono<f64>: IntoSample<Src>,
+{
+    type Src = Src;
+    fn next(&mut self, _sink: (), ctx: &Ctx) -> Src {
+        self.pos += 1;
+        Mono::new((2.0 * std::f64::consts::PI * self.pos as f64 * self.freq / ctx.get_freq() as f64).sin())
+            .into_sample()
+    }
+}
+
 pub struct CpalSink;
 impl CpalSink {
     pub fn new() -> Self {

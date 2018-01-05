@@ -5,14 +5,10 @@ use rust_streamer::sample::*;
 use rust_streamer::graphic::*;
 
 fn main() {
-    let source = WAVSource::new("test85.wav");
+    //let source = WAVSource::new("test85.wav");
     //let source = FreqConv::new(source);
 
-    let mut a = 0usize;
-    let osc = FnElement::new(move |_: ()| -> Stereo<i16> {
-        a += 1;
-        Mono::new((a as f64 / 20.0).sin()).into_sample()
-    });
+    let osc = SineWave::new(440.0);
 
     let bc = FnElement::new(|x: Stereo<i16>| {
         x.map(|s: i16| { s & !0x1fff })
@@ -37,7 +33,7 @@ fn main() {
     //let sink = PrintSink::new();
     let sink = CpalSink::new();
 
-    let p = pipe!(source, oscillo, bc, lp, oscillo2, sink);
+    let p = pipe!(osc, oscillo, bc, lp, oscillo2, sink);
 
     p.start(&Context::new(44100));
 }
