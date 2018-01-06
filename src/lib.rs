@@ -141,31 +141,3 @@ impl<T: Copy> FixedQueue for [T] {
         self[len - 1] = item;
     }
 }
-
-pub struct FreqConv<E> {
-    source: E,
-    buffer: f64,
-    buffer_prev: f64,
-    buffer_ptr: isize,
-    next_ptr: isize,
-}
-impl<E> FreqConv<E> {
-    pub fn new(source: E) -> Self {
-        Self {
-            source: source,
-            buffer: 0f64,
-            buffer_prev: 0f64,
-            buffer_ptr: -1,
-            next_ptr: -1,
-        }
-    }
-}
-/*
-impl<E: Element> Element for FreqConv<E> {
-    type Sink = E::Sink;
-    type Src = E::Src;
-    fn next(&mut self, sink: Self::Sink) -> Self::Src {
-        self.source.next(sink)
-    }
-}
-*/
