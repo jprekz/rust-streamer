@@ -203,30 +203,39 @@ where
 // DSP Element
 
 pub struct LowPassFilter {
+    cutoff: f64,
+    q: f64,
     iir_l: BiQuadIIR,
     iir_r: BiQuadIIR,
 }
 impl LowPassFilter {
     pub fn new(cutoff: f64, q: f64) -> Self {
-        let omega = 2.0 * 3.14159265 * cutoff / 44100.0 as f64;
-        let alpha = f64::sin(omega) / (2.0 * q);
+        Self {
+            cutoff: cutoff,
+            q: q,
+            iir_l: Default::default(),
+            iir_r: Default::default(),
+        }
+    }
+}
+impl<T, Ctx> Element<T, Ctx> for LowPassFilter
+where
+    Ctx: FreqCtx,
+    T: IntoSample<Stereo<f64>> + FromSample<Stereo<f64>>,
+{
+    type Src = T;
+    fn init_with_ctx(&mut self, ctx: &Ctx) {
+        let omega = 2.0 * 3.14159265 * self.cutoff / ctx.get_freq() as f64;
+        let alpha = f64::sin(omega) / (2.0 * self.q);
         let b0 = (1.0 - f64::cos(omega)) / 2.0;
         let b1 =  1.0 - f64::cos(omega);
         let b2 = (1.0 - f64::cos(omega)) / 2.0;
         let a0 =  1.0 + alpha;
         let a1 = -2.0 * f64::cos(omega);
         let a2 =  1.0 - alpha;
-        Self {
-            iir_l: BiQuadIIR::new(b0, b1, b2, a0, a1, a2),
-            iir_r: BiQuadIIR::new(b0, b1, b2, a0, a1, a2),
-        }
+        self.iir_l = BiQuadIIR::new(b0, b1, b2, a0, a1, a2);
+        self.iir_r = BiQuadIIR::new(b0, b1, b2, a0, a1, a2);
     }
-}
-impl<T, Ctx> Element<T, Ctx> for LowPassFilter
-where
-    T: IntoSample<Stereo<f64>> + FromSample<Stereo<f64>>,
-{
-    type Src = T;
     fn next(&mut self, sink: T, _ctx: &Ctx) -> T {
         let sink = sink.into_sample();
         let src = Stereo {
@@ -236,4 +245,3 @@ where
         src.into_sample()
     }
 }
-
