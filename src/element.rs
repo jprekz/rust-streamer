@@ -61,7 +61,7 @@ impl<Src> SineWave<Src> {
 impl<Ctx, Src> Element<(), Ctx> for SineWave<Src>
 where
     Ctx: FreqCtx,
-    Mono<f64>: IntoSample<Src>,
+    Src: FromSample<Mono<f64>>,
 {
     type Src = Src;
     fn next(&mut self, _sink: (), ctx: &Ctx) -> Src {
