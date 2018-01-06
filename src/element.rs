@@ -246,7 +246,7 @@ where
 {
     type Src = T;
     fn init_with_ctx(&mut self, ctx: &Ctx) {
-        let omega = 2.0 * 3.14159265 * self.cutoff / ctx.get_freq() as f64;
+        let omega = 2.0 * std::f64::consts::PI * self.cutoff / ctx.get_freq() as f64;
         let alpha = f64::sin(omega) / (2.0 * self.q);
         let b0 = (1.0 - f64::cos(omega)) / 2.0;
         let b1 =  1.0 - f64::cos(omega);
