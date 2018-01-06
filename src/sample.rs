@@ -87,46 +87,61 @@ impl<T: SampleType> Sample for Mono<T> {
 
 
 
+pub trait FromSample<T> {
+    fn from_sample(T) -> Self;
+}
+
+/// should not directly implement this trait.
 pub trait IntoSample<T> {
     fn into_sample(self) -> T;
 }
-impl<S1, S2> IntoSample<Stereo<S2>> for Stereo<S1>
+
+impl<T, U> IntoSample<U> for T
+where
+    U: FromSample<T>,
+{
+    fn into_sample(self) -> U {
+        U::from_sample(self)
+    }
+}
+
+impl<S1, S2> FromSample<Stereo<S1>> for Stereo<S2>
 where
     S1: SampleType + IntoSampleType<S2>,
     S2: SampleType,
 {
-    fn into_sample(self) -> Stereo<S2> {
+    fn from_sample(t: Stereo<S1>) -> Stereo<S2> {
         Stereo {
-            l: self.l.into_sampletype(),
-            r: self.r.into_sampletype(),
+            l: t.l.into_sampletype(),
+            r: t.r.into_sampletype(),
         }
     }
 }
-impl<S1, S2> IntoSample<Mono<S2>> for Stereo<S1>
+impl<S1, S2> FromSample<Stereo<S1>> for Mono<S2>
 where
     S1: SampleType + IntoSampleType<S2>,
     S2: SampleType,
 {
-    fn into_sample(self) -> Mono<S2> {
-        self.to_mono().into_sample()
+    fn from_sample(t: Stereo<S1>) -> Mono<S2> {
+        t.to_mono().into_sample()
     }
 }
-impl<S1, S2> IntoSample<Mono<S2>> for Mono<S1>
+impl<S1, S2> FromSample<Mono<S1>> for Mono<S2>
 where
     S1: SampleType + IntoSampleType<S2>,
     S2: SampleType,
 {
-    fn into_sample(self) -> Mono<S2> {
-        Mono(self.0.into_sampletype())
+    fn from_sample(t: Mono<S1>) -> Mono<S2> {
+        Mono(t.0.into_sampletype())
     }
 }
-impl<S1, S2> IntoSample<Stereo<S2>> for Mono<S1>
+impl<S1, S2> FromSample<Mono<S1>> for Stereo<S2>
 where
     S1: SampleType + IntoSampleType<S2>,
     S2: SampleType,
 {
-    fn into_sample(self) -> Stereo<S2> {
-        self.to_stereo().into_sample()
+    fn from_sample(t: Mono<S1>) -> Stereo<S2> {
+        t.to_stereo().into_sample()
     }
 }
 
