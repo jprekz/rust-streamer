@@ -10,6 +10,7 @@ pub mod graphic;
 pub trait Element<Sink, Ctx> {
     type Src;
     fn next(&mut self, sink: Sink, ctx: &Ctx) -> Self::Src;
+    fn init_with_ctx(&mut self, _ctx: &Ctx) {}
 }
 pub trait PullElement<Sink, Ctx> {
     fn start<E>(&mut self, sink: E, ctx: &Ctx)
@@ -54,12 +55,17 @@ where
     fn next(&mut self, sink: Sink, ctx: &Ctx) -> Self::Src {
         self.b.next(self.a.next(sink, ctx), ctx)
     }
+    fn init_with_ctx(&mut self, ctx: &Ctx) {
+        self.a.init_with_ctx(ctx);
+        self.b.init_with_ctx(ctx);
+    }
 }
 impl<A, B, Ctx> Pipeline<Ctx> for Pipe<A, B>
 where
     Self: Element<(), Ctx, Src = ()>,
 {
     fn start(mut self, ctx: &Ctx) {
+        self.init_with_ctx(ctx);
         loop {
             self.next((), ctx);
         }
@@ -71,6 +77,7 @@ where
     B: PullElement<A::Src, Ctx>,
 {
     fn start(mut self, ctx: &Ctx) {
+        self.a.init_with_ctx(ctx);
         self.b.start(self.a, ctx);
     }
 }
@@ -80,6 +87,7 @@ where
     B: Element<A::Src, Ctx, Src = ()> + Send,
 {
     fn start(mut self, ctx: &Ctx) {
+        self.b.init_with_ctx(ctx);
         self.a.start(self.b, ctx);
     }
 }
