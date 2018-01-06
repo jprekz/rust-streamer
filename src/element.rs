@@ -32,7 +32,13 @@ where
     type Src = Src;
     fn next(&mut self, _sink: (), _ctx: &Ctx) -> Src {
         self.pos += 1;
-        self.wav.get_sample_as::<Src>(self.pos - 1).unwrap()
+        match self.wav.get_sample_as::<Src>(self.pos - 1) {
+            Some(s) => s,
+            None => {
+                self.pos = 1;
+                self.wav.get_sample_as::<Src>(self.pos - 1).unwrap()
+            }
+        }
     }
 }
 
