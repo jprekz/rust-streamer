@@ -7,6 +7,10 @@ use super::sample::*;
 
 use std::sync::{Arc, Mutex};
 
+const BLACK: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
+const GRAY: [f32; 4] = [0.5, 0.5, 0.5, 1.0];
+const CYAN: [f32; 4] = [0.0, 1.0, 1.0, 1.0];
+
 pub struct Oscillo {
     shared_data: Arc<Mutex<Vec<f64>>>,
     local_data: Vec<f64>,
@@ -24,10 +28,10 @@ impl Oscillo {
             while let Some(event) = window.next() {
                 let data = { data_move.lock().unwrap().clone() };
                 window.draw_2d(&event, |context, graphics| {
-                    clear([0.0, 0.0, 0.0, 1.0], graphics);
+                    clear(BLACK, graphics);
                     for i in 0..data.len() - 1 {
                         line(
-                            [0.0, 1.0, 1.0, 1.0],
+                            CYAN,
                             1.0,
                             [
                                 i as f64,
@@ -84,25 +88,28 @@ impl Spectrum {
                 .unwrap();
             while let Some(event) = window.next() {
                 let data = { data_move.lock().unwrap().clone() };
-                let data = apply_window(data, blackman_harris);
+                //let data = apply_window(data, blackman_harris);
                 let data = fft(data);
                 window.draw_2d(&event, |context, graphics| {
-                    clear([0.0, 0.0, 0.0, 1.0], graphics);
-                    for i in 0..len / 2 {
-                        let d = data[i];
+                    clear(BLACK, graphics);
+                    for i in 1..len / 2 {
+                        let d = data[i] / len as f64 * 2.0;
                         if d == 0.0 { continue; }
+                        let db = d.log(10.0) * 20.0;
+                        let y = -db * 4.8 + 10.0;
                         let f = 44100.0 * i as f64 / len as f64;
-                        let x = f.log(10.0) * 200.0 - 280.0;
-                        line(
-                            [0.0, 1.0, 1.0, 1.0],
-                            1.0,
-                            [
-                                x, 480.0 - (d.log(10.0) * 200.0),
-                                x, 480.0,
-                            ],
-                            context.transform,
-                            graphics,
-                        );
+                        let x = (f.log(10.0) - 50f64.log(10.0)) * 220.0;
+                        line(CYAN, 1.0, [x, y, x, 480.0], context.transform, graphics);
+                    }
+                    for i in 0..10 {
+                        let db = -10.0 * i as f64;
+                        let y = -db * 4.8 + 10.0;
+                        line(GRAY, 1.0, [0.0, y, 640.0, y], context.transform, graphics);
+                    }
+                    for i in 2..5 {
+                        let f = 10i32.pow(i) as f64;
+                        let x = (f.log(10.0) - 50f64.log(10.0)) * 220.0;
+                        line(GRAY, 1.0, [x, 0.0, x, 480.0], context.transform, graphics);
                     }
                 });
             }
