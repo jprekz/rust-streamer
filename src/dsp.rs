@@ -71,3 +71,65 @@ pub fn blackman_harris(x: f64) -> f64 {
         + 0.14128 * (4.0 * PI * x).cos()
         - 0.01168 * (6.0 * PI * x).cos()
 }
+
+
+
+pub struct BiQuadIIR {
+    in1: f64,
+    in2: f64,
+    out1: f64,
+    out2: f64,
+    b0: f64,
+    b1: f64,
+    b2: f64,
+    a0: f64,
+    a1: f64,
+    a2: f64,
+}
+
+impl BiQuadIIR {
+    pub fn new(b0: f64, b1: f64, b2: f64, a0: f64, a1: f64, a2: f64) -> Self {
+        BiQuadIIR {
+            in1: 0.0,
+            in2: 0.0,
+            out1: 0.0,
+            out2: 0.0,
+            b0: b0,
+            b1: b1,
+            b2: b2,
+            a0: a0,
+            a1: a1,
+            a2: a2,
+        }
+    }
+
+    pub fn next(&mut self, input: f64) -> f64 {
+        let output = self.b0/self.a0 * input
+            + self.b1/self.a0 * self.in1
+            + self.b2/self.a0 * self.in2
+            - self.a1/self.a0 * self.out1
+            - self.a2/self.a0 * self.out2;
+        self.in2  = self.in1;
+        self.in1  = input;
+        self.out2 = self.out1;
+        self.out1 = output;
+        output
+    }
+}
+
+impl Default for BiQuadIIR {
+    fn default() -> BiQuadIIR {
+        Self {
+            in1: 0.0,
+            in2: 0.0,
+            out1: 0.0,
+            out2: 0.0,
+            b0: 1.0,
+            b1: 0.0,
+            b2: 0.0,
+            a0: 1.0,
+            a1: 0.0,
+            a2: 0.0,
+        }
+    }
+}
