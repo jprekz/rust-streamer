@@ -1,4 +1,5 @@
 extern crate cpal;
+extern crate rand;
 
 use super::*;
 use super::wav::*;
@@ -67,6 +68,26 @@ where
         self.pos += 1;
         Mono::new((2.0 * std::f64::consts::PI * self.pos as f64 * self.freq / ctx.get_freq() as f64).sin())
             .into_sample()
+    }
+}
+pub struct WhiteNoise<Src> {
+    src_type: ::std::marker::PhantomData<Src>,
+}
+impl<Src> WhiteNoise<Src> {
+    pub fn new() -> Self {
+        Self {
+            src_type: ::std::marker::PhantomData,
+        }
+    }
+}
+impl<Ctx, Src> Element<(), Ctx> for WhiteNoise<Src>
+where
+    Src: FromSample<Mono<f64>>,
+{
+    type Src = Src;
+    fn next(&mut self, _sink: (), _ctx: &Ctx) -> Src {
+        use self::rand::distributions::{IndependentSample, Range};
+        Mono::new(Range::new(-1f64, 1.).ind_sample(&mut rand::thread_rng())).into_sample()
     }
 }
 

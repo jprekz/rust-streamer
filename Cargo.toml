@@ -10,5 +10,6 @@ graphic = ["piston_window"]
 [dependencies]
 cpal = "*"
 num = "0.1"
+rand = "0.4"
 
 piston_window = { version = "0.70.0", optional = true }
