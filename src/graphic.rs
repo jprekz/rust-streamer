@@ -8,8 +8,8 @@ use super::sample::*;
 use std::sync::{Arc, Mutex};
 
 const BLACK: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
-const GRAY: [f32; 4] = [0.5, 0.5, 0.5, 1.0];
-const CYAN: [f32; 4] = [0.0, 1.0, 1.0, 1.0];
+const WHITE: [f32; 4] = [1.0, 1.0, 1.0, 1.0];
+const GRAY: [f32; 4] = [0.5, 0.5, 0.5, 0.5];
 
 pub struct Oscillo {
     shared_data: Arc<Mutex<Vec<f64>>>,
@@ -27,17 +27,19 @@ impl Oscillo {
                 .unwrap();
             while let Some(event) = window.next() {
                 let data = { data_move.lock().unwrap().clone() };
+                let width = window.size().width as f64;
+                let height = window.size().height as f64;
                 window.draw_2d(&event, |context, graphics| {
-                    clear(BLACK, graphics);
-                    for i in 0..data.len() - 1 {
+                    clear(WHITE, graphics);
+                    for i in 0..len - 1 {
                         line(
-                            CYAN,
+                            BLACK,
                             1.0,
                             [
-                                i as f64,
-                                (data[i] + 1.0) * 240.0,
-                                (i + 1) as f64,
-                                (data[i + 1] + 1.0) * 240.0,
+                                i as f64 * width / len as f64,
+                                (data[i] + 1.0) * height / 2.0,
+                                (i + 1) as f64 * width / len as f64,
+                                (data[i + 1] + 1.0) * height / 2.0,
                             ],
                             context.transform,
                             graphics,
@@ -90,28 +92,32 @@ impl Spectrum {
                 let data = { data_move.lock().unwrap().clone() };
                 //let data = apply_window(data, blackman_harris);
                 let data = fft(data);
+                let width = window.size().width as f64;
+                let height = window.size().height as f64;
                 window.draw_2d(&event, |context, graphics| {
-                    clear(BLACK, graphics);
+                    clear(WHITE, graphics);
                     for i in 1..len / 2 {
                         let d = data[i] / len as f64 * 2.0;
                         if d == 0.0 {
                             continue;
                         }
                         let db = d.log(10.0) * 20.0;
-                        let y = -db * 4.8 + 10.0;
+                        let y = ((-db + 5.0) / 70.0) * height;
                         let f = 44100.0 * i as f64 / len as f64;
-                        let x = (f.log(10.0) - 50f64.log(10.0)) * 220.0;
-                        line(CYAN, 1.0, [x, y, x, 480.0], context.transform, graphics);
+                        let x = (f.log(10.0) - 50f64.log(10.0)) * 0.35 * width;
+                        line(BLACK, 1.0, [x, y, x, height], context.transform, graphics);
                     }
                     for i in 0..10 {
                         let db = -10.0 * i as f64;
-                        let y = -db * 4.8 + 10.0;
-                        line(GRAY, 1.0, [0.0, y, 640.0, y], context.transform, graphics);
+                        let y = ((-db + 5.0) / 70.0) * height;
+                        line(GRAY, 1.0, [0.0, y, width, y], context.transform, graphics);
                     }
                     for i in 2..5 {
-                        let f = 10i32.pow(i) as f64;
-                        let x = (f.log(10.0) - 50f64.log(10.0)) * 220.0;
-                        line(GRAY, 1.0, [x, 0.0, x, 480.0], context.transform, graphics);
+                        for j in 1..11 {
+                            let f = (10i32.pow(i) * j) as f64;
+                            let x = (f.log(10.0) - 50f64.log(10.0)) * 0.35 * width;
+                            line(GRAY, 1.0, [x, 0.0, x, height], context.transform, graphics);
+                        }
                     }
                 });
             }
