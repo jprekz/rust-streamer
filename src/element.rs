@@ -7,13 +7,14 @@ use super::sample::*;
 use super::dsp::*;
 
 use std::fs::File;
+use std::marker::PhantomData;
 
 // Input / Output
 
 pub struct WAVSource<Src> {
     wav: WAV,
     pos: usize,
-    src_type: ::std::marker::PhantomData<Src>,
+    src_type: PhantomData<Src>,
 }
 impl<Src> WAVSource<Src> {
     pub fn new(filename: &str) -> Self {
@@ -22,7 +23,7 @@ impl<Src> WAVSource<Src> {
         Self {
             wav: wav,
             pos: 0,
-            src_type: ::std::marker::PhantomData,
+            src_type: PhantomData,
         }
     }
 }
@@ -47,14 +48,14 @@ where
 pub struct SineWave<Src> {
     freq: f64,
     pos: usize,
-    src_type: ::std::marker::PhantomData<Src>,
+    src_type: PhantomData<Src>,
 }
 impl<Src> SineWave<Src> {
     pub fn new(freq: f64) -> Self {
         Self {
             freq: freq,
             pos: 0,
-            src_type: ::std::marker::PhantomData,
+            src_type: PhantomData,
         }
     }
 }
@@ -70,13 +71,14 @@ where
             .into_sample()
     }
 }
+
 pub struct WhiteNoise<Src> {
-    src_type: ::std::marker::PhantomData<Src>,
+    src_type: PhantomData<Src>,
 }
 impl<Src> WhiteNoise<Src> {
     pub fn new() -> Self {
         Self {
-            src_type: ::std::marker::PhantomData,
+            src_type: PhantomData,
         }
     }
 }

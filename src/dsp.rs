@@ -121,13 +121,13 @@ impl BiQuadIIR {
     }
 
     pub fn next(&mut self, input: f64) -> f64 {
-        let output = self.b0/self.a0 * input
-            + self.b1/self.a0 * self.in1
-            + self.b2/self.a0 * self.in2
-            - self.a1/self.a0 * self.out1
-            - self.a2/self.a0 * self.out2;
-        self.in2  = self.in1;
-        self.in1  = input;
+        let output = self.b0 / self.a0 * input
+            + self.b1 / self.a0 * self.in1
+            + self.b2 / self.a0 * self.in2
+            - self.a1 / self.a0 * self.out1
+            - self.a2 / self.a0 * self.out2;
+        self.in2 = self.in1;
+        self.in1 = input;
         self.out2 = self.out1;
         self.out1 = output;
         output
@@ -137,47 +137,47 @@ impl BiQuadIIR {
         let omega = 2.0 * PI * freq / samplerate;
         let alpha = f64::sin(omega) / (2.0 * q);
         let b0 = (1.0 - f64::cos(omega)) / 2.0;
-        let b1 =  1.0 - f64::cos(omega);
+        let b1 = 1.0 - f64::cos(omega);
         let b2 = (1.0 - f64::cos(omega)) / 2.0;
-        let a0 =  1.0 + alpha;
+        let a0 = 1.0 + alpha;
         let a1 = -2.0 * f64::cos(omega);
-        let a2 =  1.0 - alpha;
+        let a2 = 1.0 - alpha;
         BiQuadIIR::new(b0, b1, b2, a0, a1, a2)
     }
 
     pub fn new_high_pass_filter(samplerate: f64, freq: f64, q: f64) -> Self {
         let omega = 2.0 * PI * freq / samplerate;
         let alpha = f64::sin(omega) / (2.0 * q);
-        let b0 =  (1.0 + f64::cos(omega)) / 2.0;
+        let b0 = (1.0 + f64::cos(omega)) / 2.0;
         let b1 = -(1.0 + f64::cos(omega));
-        let b2 =  (1.0 + f64::cos(omega)) / 2.0;
-        let a0 =  1.0 + alpha;
+        let b2 = (1.0 + f64::cos(omega)) / 2.0;
+        let a0 = 1.0 + alpha;
         let a1 = -2.0 * f64::cos(omega);
-        let a2 =  1.0 - alpha;
+        let a2 = 1.0 - alpha;
         BiQuadIIR::new(b0, b1, b2, a0, a1, a2)
     }
 
     pub fn new_band_pass_filter(samplerate: f64, freq: f64, bw: f64) -> Self {
         let omega = 2.0 * PI * freq / samplerate;
         let alpha = f64::sin(omega) * f64::sinh(2f64.log(10.0) / 2.0 * bw * omega / omega.sin());
-        let b0 =  alpha;
-        let b1 =  0.0;
+        let b0 = alpha;
+        let b1 = 0.0;
         let b2 = -alpha;
-        let a0 =  1.0 + alpha;
+        let a0 = 1.0 + alpha;
         let a1 = -2.0 * f64::cos(omega);
-        let a2 =  1.0 - alpha;
+        let a2 = 1.0 - alpha;
         BiQuadIIR::new(b0, b1, b2, a0, a1, a2)
     }
 
     pub fn new_notch_filter(samplerate: f64, freq: f64, bw: f64) -> Self {
         let omega = 2.0 * PI * freq / samplerate;
         let alpha = f64::sin(omega) * f64::sinh(2f64.log(10.0) / 2.0 * bw * omega / omega.sin());
-        let b0 =  1.0;
+        let b0 = 1.0;
         let b1 = -2.0 * f64::cos(omega);
-        let b2 =  1.0;
-        let a0 =  1.0 + alpha;
+        let b2 = 1.0;
+        let a0 = 1.0 + alpha;
         let a1 = -2.0 * f64::cos(omega);
-        let a2 =  1.0 - alpha;
+        let a2 = 1.0 - alpha;
         BiQuadIIR::new(b0, b1, b2, a0, a1, a2)
     }
 
@@ -185,9 +185,9 @@ impl BiQuadIIR {
         let omega = 2.0 * PI * freq / samplerate;
         let a = 10f64.powf(gain / 40.0);
         let beta = f64::sqrt(a) / q;
-        let b0 =  a * ((a + 1.0) - (a - 1.0) * f64::cos(omega) + beta * f64::sin(omega));
-        let b1 =  2.0 * a * ((a - 1.0) - (a + 1.0) * f64::cos(omega));
-        let b2 =  a * ((a + 1.0) - (a - 1.0) * f64::cos(omega) - beta * f64::sin(omega));
+        let b0 = a * ((a + 1.0) - (a - 1.0) * f64::cos(omega) + beta * f64::sin(omega));
+        let b1 = 2.0 * a * ((a - 1.0) - (a + 1.0) * f64::cos(omega));
+        let b2 = a * ((a + 1.0) - (a - 1.0) * f64::cos(omega) - beta * f64::sin(omega));
         let a0 = (a + 1.0) + (a - 1.0) * f64::cos(omega) + beta * f64::sin(omega);
         let a1 = -2.0 * ((a - 1.0) + (a + 1.0) * f64::cos(omega));
         let a2 = (a + 1.0) + (a - 1.0) * f64::cos(omega) - beta * f64::sin(omega);
@@ -198,9 +198,9 @@ impl BiQuadIIR {
         let omega = 2.0 * PI * freq / samplerate;
         let a = 10f64.powf(gain / 40.0);
         let beta = f64::sqrt(a) / q;
-        let b0 =  a * ((a + 1.0) + (a - 1.0) * f64::cos(omega) + beta * f64::sin(omega));
+        let b0 = a * ((a + 1.0) + (a - 1.0) * f64::cos(omega) + beta * f64::sin(omega));
         let b1 = -2.0 * a * ((a - 1.0) + (a + 1.0) * f64::cos(omega));
-        let b2 =  a * ((a + 1.0) + (a - 1.0) * f64::cos(omega) - beta * f64::sin(omega));
+        let b2 = a * ((a + 1.0) + (a - 1.0) * f64::cos(omega) - beta * f64::sin(omega));
         let a0 = (a + 1.0) - (a - 1.0) * f64::cos(omega) + beta * f64::sin(omega);
         let a1 = 2.0 * ((a - 1.0) - (a + 1.0) * f64::cos(omega));
         let a2 = (a + 1.0) - (a - 1.0) * f64::cos(omega) - beta * f64::sin(omega);
@@ -211,24 +211,24 @@ impl BiQuadIIR {
         let omega = 2.0 * PI * freq / samplerate;
         let alpha = f64::sin(omega) * f64::sinh(2f64.log(10.0) / 2.0 * bw * omega / omega.sin());
         let a = 10f64.powf(gain / 40.0);
-        let b0 =  1.0 + alpha * a;
+        let b0 = 1.0 + alpha * a;
         let b1 = -2.0 * f64::cos(omega);
-        let b2 =  1.0 - alpha * a;
-        let a0 =  1.0 + alpha / a;
+        let b2 = 1.0 - alpha * a;
+        let a0 = 1.0 + alpha / a;
         let a1 = -2.0 * f64::cos(omega);
-        let a2 =  1.0 - alpha / a;
+        let a2 = 1.0 - alpha / a;
         BiQuadIIR::new(b0, b1, b2, a0, a1, a2)
     }
 
     pub fn new_all_pass_filter(samplerate: f64, freq: f64, q: f64) -> Self {
         let omega = 2.0 * PI * freq / samplerate;
         let alpha = f64::sin(omega) / (2.0 * q);
-        let b0 =  1.0 - alpha;
+        let b0 = 1.0 - alpha;
         let b1 = -2.0 * f64::cos(omega);
-        let b2 =  1.0 + alpha;
-        let a0 =  1.0 + alpha;
+        let b2 = 1.0 + alpha;
+        let a0 = 1.0 + alpha;
         let a1 = -2.0 * f64::cos(omega);
-        let a2 =  1.0 - alpha;
+        let a2 = 1.0 - alpha;
         BiQuadIIR::new(b0, b1, b2, a0, a1, a2)
     }
 }

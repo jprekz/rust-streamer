@@ -94,7 +94,9 @@ impl Spectrum {
                     clear(BLACK, graphics);
                     for i in 1..len / 2 {
                         let d = data[i] / len as f64 * 2.0;
-                        if d == 0.0 { continue; }
+                        if d == 0.0 {
+                            continue;
+                        }
                         let db = d.log(10.0) * 20.0;
                         let y = -db * 4.8 + 10.0;
                         let f = 44100.0 * i as f64 / len as f64;
@@ -121,7 +123,7 @@ impl Spectrum {
         }
     }
 }
-impl<T, Ctx> Element<T, Ctx> for Spectrum 
+impl<T, Ctx> Element<T, Ctx> for Spectrum
 where
     T: IntoSample<Stereo<f64>> + Copy,
 {
