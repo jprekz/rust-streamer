@@ -91,13 +91,13 @@ where
     }
 }
 
-pub struct CpalSink;
-impl CpalSink {
+pub struct DefaultSink;
+impl DefaultSink {
     pub fn new() -> Self {
-        CpalSink {}
+        DefaultSink {}
     }
 }
-impl<S, Ctx> PullElement<S, Ctx> for CpalSink
+impl<S, Ctx> PullElement<S, Ctx> for DefaultSink
 where
     S: IntoSample<Stereo<f32>>,
     Ctx: FreqCtx + Sync,

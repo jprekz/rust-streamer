@@ -14,7 +14,7 @@ fn main() {
     //let tee = Tee::new(|x| {println!("{:?}", x)});
 
     //let sink = PrintSink::new();
-    let sink = CpalSink::new();
+    let sink = DefaultSink::new();
 
     let p = pipe!(
         source,
