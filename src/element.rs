@@ -226,15 +226,15 @@ where
 // DSP Element
 
 pub struct LowPassFilter {
-    cutoff: f64,
+    freq: f64,
     q: f64,
     iir_l: BiQuadIIR,
     iir_r: BiQuadIIR,
 }
 impl LowPassFilter {
-    pub fn new(cutoff: f64, q: f64) -> Self {
+    pub fn new(freq: f64, q: f64) -> Self {
         Self {
-            cutoff: cutoff,
+            freq: freq,
             q: q,
             iir_l: Default::default(),
             iir_r: Default::default(),
@@ -248,8 +248,8 @@ where
 {
     type Src = T;
     fn init_with_ctx(&mut self, ctx: &Ctx) {
-        self.iir_l = BiQuadIIR::new_low_pass_filter(ctx.get_freq() as f64, self.cutoff, self.q);
-        self.iir_r = BiQuadIIR::new_low_pass_filter(ctx.get_freq() as f64, self.cutoff, self.q);
+        self.iir_l = BiQuadIIR::new_low_pass_filter(ctx.get_freq() as f64, self.freq, self.q);
+        self.iir_r = BiQuadIIR::new_low_pass_filter(ctx.get_freq() as f64, self.freq, self.q);
     }
     fn next(&mut self, sink: T, _ctx: &Ctx) -> T {
         let sink = sink.into_sample();
@@ -262,15 +262,15 @@ where
 }
 
 pub struct HighPassFilter {
-    cutoff: f64,
+    freq: f64,
     q: f64,
     iir_l: BiQuadIIR,
     iir_r: BiQuadIIR,
 }
 impl HighPassFilter {
-    pub fn new(cutoff: f64, q: f64) -> Self {
+    pub fn new(freq: f64, q: f64) -> Self {
         Self {
-            cutoff: cutoff,
+            freq: freq,
             q: q,
             iir_l: Default::default(),
             iir_r: Default::default(),
@@ -284,8 +284,8 @@ where
 {
     type Src = T;
     fn init_with_ctx(&mut self, ctx: &Ctx) {
-        self.iir_l = BiQuadIIR::new_high_pass_filter(ctx.get_freq() as f64, self.cutoff, self.q);
-        self.iir_r = BiQuadIIR::new_high_pass_filter(ctx.get_freq() as f64, self.cutoff, self.q);
+        self.iir_l = BiQuadIIR::new_high_pass_filter(ctx.get_freq() as f64, self.freq, self.q);
+        self.iir_r = BiQuadIIR::new_high_pass_filter(ctx.get_freq() as f64, self.freq, self.q);
     }
     fn next(&mut self, sink: T, _ctx: &Ctx) -> T {
         let sink = sink.into_sample();
@@ -298,15 +298,15 @@ where
 }
 
 pub struct BandPassFilter {
-    cutoff: f64,
+    freq: f64,
     bw: f64,
     iir_l: BiQuadIIR,
     iir_r: BiQuadIIR,
 }
 impl BandPassFilter {
-    pub fn new(cutoff: f64, bw: f64) -> Self {
+    pub fn new(freq: f64, bw: f64) -> Self {
         Self {
-            cutoff: cutoff,
+            freq: freq,
             bw: bw,
             iir_l: Default::default(),
             iir_r: Default::default(),
@@ -320,8 +320,8 @@ where
 {
     type Src = T;
     fn init_with_ctx(&mut self, ctx: &Ctx) {
-        self.iir_l = BiQuadIIR::new_band_pass_filter(ctx.get_freq() as f64, self.cutoff, self.bw);
-        self.iir_r = BiQuadIIR::new_band_pass_filter(ctx.get_freq() as f64, self.cutoff, self.bw);
+        self.iir_l = BiQuadIIR::new_band_pass_filter(ctx.get_freq() as f64, self.freq, self.bw);
+        self.iir_r = BiQuadIIR::new_band_pass_filter(ctx.get_freq() as f64, self.freq, self.bw);
     }
     fn next(&mut self, sink: T, _ctx: &Ctx) -> T {
         let sink = sink.into_sample();
@@ -334,15 +334,15 @@ where
 }
 
 pub struct NotchFilter {
-    cutoff: f64,
+    freq: f64,
     bw: f64,
     iir_l: BiQuadIIR,
     iir_r: BiQuadIIR,
 }
 impl NotchFilter {
-    pub fn new(cutoff: f64, bw: f64) -> Self {
+    pub fn new(freq: f64, bw: f64) -> Self {
         Self {
-            cutoff: cutoff,
+            freq: freq,
             bw: bw,
             iir_l: Default::default(),
             iir_r: Default::default(),
@@ -356,8 +356,8 @@ where
 {
     type Src = T;
     fn init_with_ctx(&mut self, ctx: &Ctx) {
-        self.iir_l = BiQuadIIR::new_notch_filter(ctx.get_freq() as f64, self.cutoff, self.bw);
-        self.iir_r = BiQuadIIR::new_notch_filter(ctx.get_freq() as f64, self.cutoff, self.bw);
+        self.iir_l = BiQuadIIR::new_notch_filter(ctx.get_freq() as f64, self.freq, self.bw);
+        self.iir_r = BiQuadIIR::new_notch_filter(ctx.get_freq() as f64, self.freq, self.bw);
     }
     fn next(&mut self, sink: T, _ctx: &Ctx) -> T {
         let sink = sink.into_sample();
@@ -370,16 +370,16 @@ where
 }
 
 pub struct LowShelfFilter {
-    cutoff: f64,
+    freq: f64,
     q: f64,
     gain: f64,
     iir_l: BiQuadIIR,
     iir_r: BiQuadIIR,
 }
 impl LowShelfFilter {
-    pub fn new(cutoff: f64, q: f64, gain: f64) -> Self {
+    pub fn new(freq: f64, q: f64, gain: f64) -> Self {
         Self {
-            cutoff: cutoff,
+            freq: freq,
             q: q,
             gain: gain,
             iir_l: Default::default(),
@@ -394,8 +394,8 @@ where
 {
     type Src = T;
     fn init_with_ctx(&mut self, ctx: &Ctx) {
-        self.iir_l = BiQuadIIR::new_low_shelf_filter(ctx.get_freq() as f64, self.cutoff, self.q, self.gain);
-        self.iir_r = BiQuadIIR::new_low_shelf_filter(ctx.get_freq() as f64, self.cutoff, self.q, self.gain);
+        self.iir_l = BiQuadIIR::new_low_shelf_filter(ctx.get_freq() as f64, self.freq, self.q, self.gain);
+        self.iir_r = BiQuadIIR::new_low_shelf_filter(ctx.get_freq() as f64, self.freq, self.q, self.gain);
     }
     fn next(&mut self, sink: T, _ctx: &Ctx) -> T {
         let sink = sink.into_sample();
@@ -408,16 +408,16 @@ where
 }
 
 pub struct HighShelfFilter {
-    cutoff: f64,
+    freq: f64,
     q: f64,
     gain: f64,
     iir_l: BiQuadIIR,
     iir_r: BiQuadIIR,
 }
 impl HighShelfFilter {
-    pub fn new(cutoff: f64, q: f64, gain: f64) -> Self {
+    pub fn new(freq: f64, q: f64, gain: f64) -> Self {
         Self {
-            cutoff: cutoff,
+            freq: freq,
             q: q,
             gain: gain,
             iir_l: Default::default(),
@@ -432,8 +432,8 @@ where
 {
     type Src = T;
     fn init_with_ctx(&mut self, ctx: &Ctx) {
-        self.iir_l = BiQuadIIR::new_high_shelf_filter(ctx.get_freq() as f64, self.cutoff, self.q, self.gain);
-        self.iir_r = BiQuadIIR::new_high_shelf_filter(ctx.get_freq() as f64, self.cutoff, self.q, self.gain);
+        self.iir_l = BiQuadIIR::new_high_shelf_filter(ctx.get_freq() as f64, self.freq, self.q, self.gain);
+        self.iir_r = BiQuadIIR::new_high_shelf_filter(ctx.get_freq() as f64, self.freq, self.q, self.gain);
     }
     fn next(&mut self, sink: T, _ctx: &Ctx) -> T {
         let sink = sink.into_sample();
@@ -446,16 +446,16 @@ where
 }
 
 pub struct PeakingFilter {
-    cutoff: f64,
+    freq: f64,
     bw: f64,
     gain: f64,
     iir_l: BiQuadIIR,
     iir_r: BiQuadIIR,
 }
 impl PeakingFilter {
-    pub fn new(cutoff: f64, bw: f64, gain: f64) -> Self {
+    pub fn new(freq: f64, bw: f64, gain: f64) -> Self {
         Self {
-            cutoff: cutoff,
+            freq: freq,
             bw: bw,
             gain: gain,
             iir_l: Default::default(),
@@ -470,8 +470,8 @@ where
 {
     type Src = T;
     fn init_with_ctx(&mut self, ctx: &Ctx) {
-        self.iir_l = BiQuadIIR::new_peaking_filter(ctx.get_freq() as f64, self.cutoff, self.bw, self.gain);
-        self.iir_r = BiQuadIIR::new_peaking_filter(ctx.get_freq() as f64, self.cutoff, self.bw, self.gain);
+        self.iir_l = BiQuadIIR::new_peaking_filter(ctx.get_freq() as f64, self.freq, self.bw, self.gain);
+        self.iir_r = BiQuadIIR::new_peaking_filter(ctx.get_freq() as f64, self.freq, self.bw, self.gain);
     }
     fn next(&mut self, sink: T, _ctx: &Ctx) -> T {
         let sink = sink.into_sample();
@@ -484,15 +484,15 @@ where
 }
 
 pub struct AllPassFilter {
-    cutoff: f64,
+    freq: f64,
     q: f64,
     iir_l: BiQuadIIR,
     iir_r: BiQuadIIR,
 }
 impl AllPassFilter {
-    pub fn new(cutoff: f64, q: f64) -> Self {
+    pub fn new(freq: f64, q: f64) -> Self {
         Self {
-            cutoff: cutoff,
+            freq: freq,
             q: q,
             iir_l: Default::default(),
             iir_r: Default::default(),
@@ -506,8 +506,8 @@ where
 {
     type Src = T;
     fn init_with_ctx(&mut self, ctx: &Ctx) {
-        self.iir_l = BiQuadIIR::new_all_pass_filter(ctx.get_freq() as f64, self.cutoff, self.q);
-        self.iir_r = BiQuadIIR::new_all_pass_filter(ctx.get_freq() as f64, self.cutoff, self.q);
+        self.iir_l = BiQuadIIR::new_all_pass_filter(ctx.get_freq() as f64, self.freq, self.q);
+        self.iir_r = BiQuadIIR::new_all_pass_filter(ctx.get_freq() as f64, self.freq, self.q);
     }
     fn next(&mut self, sink: T, _ctx: &Ctx) -> T {
         let sink = sink.into_sample();
