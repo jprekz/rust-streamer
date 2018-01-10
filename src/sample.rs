@@ -21,6 +21,16 @@ impl<T1: SampleType> Stereo<T1> {
     }
 }
 
+impl<T: SampleType> Add for Stereo<T> {
+    type Output = Self;
+    fn add(self, rhs: Self) -> Self {
+        Stereo {
+            l: self.l + rhs.l,
+            r: self.r + rhs.r,
+        }
+    }
+}
+
 
 
 #[derive(Copy, Clone, Debug)]
@@ -32,6 +42,13 @@ impl<T1: SampleType> Mono<T1> {
     }
     pub fn map<T2: SampleType, F: Fn(T1) -> T2>(self, f: F) -> Mono<T2> {
         Mono(f(self.0))
+    }
+}
+
+impl<T: SampleType> Add for Mono<T> {
+    type Output = Self;
+    fn add(self, rhs: Self) -> Self {
+        Mono(self.0 + rhs.0)
     }
 }
 
