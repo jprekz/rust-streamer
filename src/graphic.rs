@@ -26,10 +26,10 @@ impl Oscillo {
                 .build()
                 .unwrap();
             while let Some(event) = window.next() {
-                let data = { data_move.lock().unwrap().clone() };
                 let width = window.size().width as f64;
                 let height = window.size().height as f64;
                 window.draw_2d(&event, |context, graphics| {
+                    let data = { data_move.lock().unwrap().clone() };
                     clear(WHITE, graphics);
                     for i in 0..len - 1 {
                         line(
@@ -89,12 +89,12 @@ impl Spectrum {
                 .build()
                 .unwrap();
             while let Some(event) = window.next() {
-                let data = { data_move.lock().unwrap().clone() };
-                //let data = apply_window(data, blackman_harris);
-                let data = fft(data);
                 let width = window.size().width as f64;
                 let height = window.size().height as f64;
                 window.draw_2d(&event, |context, graphics| {
+                    let data = { data_move.lock().unwrap().clone() };
+                    //let data = apply_window(data, blackman_harris);
+                    let data = fft(data);
                     clear(WHITE, graphics);
                     for i in 1..len / 2 {
                         let d = data[i] / len as f64 * 2.0;
