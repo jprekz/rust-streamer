@@ -1,3 +1,5 @@
+use std::ops::Add;
+
 pub mod element;
 pub mod wav;
 pub mod sample;
@@ -103,6 +105,48 @@ macro_rules! pipe {
             let p = Pipe::new(p, $e);
         )*
         p
+    }}
+}
+
+// fork 
+
+pub struct Fork<A, B> {
+    a: A,
+    b: B,
+}
+impl<A, B> Fork<A, B> {
+    pub fn new(a: A, b: B) -> Self {
+        Self { a: a, b: b }
+    }
+}
+impl<A, B, Sink, Ctx> Element<Sink, Ctx> for Fork<A, B>
+where
+    A: Element<Sink, Ctx>,
+    B: Element<Sink, Ctx>,
+    A::Src: Add<B::Src>,
+    Sink: Copy,
+{
+    type Src = <A::Src as Add<B::Src>>::Output;
+    fn next(&mut self, sink: Sink, ctx: &Ctx) -> Self::Src {
+        self.a.next(sink, ctx) + self.b.next(sink, ctx)
+    }
+    fn init_with_ctx(&mut self, ctx: &Ctx) {
+        self.a.init_with_ctx(ctx);
+        self.b.init_with_ctx(ctx);
+    }
+}
+
+#[macro_export]
+macro_rules! fork {
+    ( $e1:expr, $e2:expr ) => {
+        Fork::new($e1, $e2);
+    };
+    ( $e1:expr, $e2:expr, $( $e:expr ),* ) => {{
+        let f = Fork::new($e1, $e2);
+        $(
+            let f = Fork::new(f, $e);
+        )*
+        f
     }}
 }
 
