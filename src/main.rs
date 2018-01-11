@@ -5,6 +5,28 @@ use rust_streamer::sample::*;
 use rust_streamer::graphic::*;
 
 fn main() {
+    let source = WAVSource::<Stereo<f64>>::new("test85.wav");
+    let noise = WhiteNoise::<Stereo<f64>>::new();
+    let gain = Gain::new(-10.0);
+    let limiter = Limiter::new(0.0);
+    let spectrum = Spectrum::new(1024);
+    let oscillo = Oscillo::new(640);
+    let sink = DefaultSink::new();
+
+    let p = pipe!(
+        fork!(
+            source,
+            pipe!(noise, gain)
+        ),
+        limiter,
+        spectrum,
+        oscillo,
+        sink
+    );
+
+    p.start(&Context::new(44100));
+/*
+
     let source: WAVSource<Stereo<f64>> = WAVSource::new("test85.wav");
 
     let bc = FnElement::new(|x: Stereo<i16>| {
@@ -25,5 +47,5 @@ fn main() {
         sink
     );
 
-    p.start(&Context::new(44100));
+    p.start(&Context::new(44100));*/
 }
