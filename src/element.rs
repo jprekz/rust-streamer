@@ -225,6 +225,74 @@ where
 
 // DSP Element
 
+pub struct Gain {
+    mag: f64,
+}
+impl Gain {
+    pub fn new(gain: f64) -> Self {
+        Self {
+            mag: f64::powf(10.0, gain / 20.0),
+        }
+    }
+}
+impl<T, Ctx> Element<Stereo<T>, Ctx> for Gain
+where
+    T: SampleType + IntoSampleType<f64>
+{
+    type Src = Stereo<f64>;
+    fn next(&mut self, sink: Stereo<T>, _ctx: &Ctx) -> Stereo<f64> {
+        sink.map(|x| {x.into_sampletype() * self.mag})
+    }
+}
+impl<T, Ctx> Element<Mono<T>, Ctx> for Gain
+where
+    T: SampleType + IntoSampleType<f64>
+{
+    type Src = Mono<f64>;
+    fn next(&mut self, sink: Mono<T>, _ctx: &Ctx) -> Mono<f64> {
+        sink.map(|x| {x.into_sampletype() * self.mag})
+    }
+}
+
+pub struct Limiter {
+    mag: f64,
+}
+impl Limiter {
+    pub fn new(th: f64) -> Self {
+        Self {
+            mag: f64::powf(10.0, th / 20.0),
+        }
+    }
+}
+impl<Ctx> Element<Stereo<f64>, Ctx> for Limiter {
+    type Src = Stereo<f64>;
+    fn next(&mut self, sink: Stereo<f64>, _ctx: &Ctx) -> Stereo<f64> {
+        sink.map(|x| {
+            if x > self.mag {
+                self.mag
+            } else if -x > self.mag {
+                -self.mag
+            } else {
+                x
+            }
+        })
+    }
+}
+impl<Ctx> Element<Mono<f64>, Ctx> for Limiter {
+    type Src = Mono<f64>;
+    fn next(&mut self, sink: Mono<f64>, _ctx: &Ctx) -> Mono<f64> {
+        sink.map(|x| {
+            if x > self.mag {
+                self.mag
+            } else if -x > self.mag {
+                -self.mag
+            } else {
+                x
+            }
+        })
+    }
+}
+
 pub struct LowPassFilter {
     freq: f64,
     q: f64,
