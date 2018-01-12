@@ -112,7 +112,7 @@ impl Spectrum {
                         let y = ((-db + 5.0) / 70.0) * height;
                         line(GRAY, 1.0, [0.0, y, width, y], context.transform, graphics);
                     }
-                    for i in 2..5 {
+                    for i in 1..5 {
                         for j in 1..11 {
                             let f = (10i32.pow(i) * j) as f64;
                             let x = (f.log(10.0) - 50f64.log(10.0)) * 0.35 * width;
