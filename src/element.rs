@@ -17,14 +17,14 @@ pub struct WAVSource<Src> {
     src_type: PhantomData<Src>,
 }
 impl<Src> WAVSource<Src> {
-    pub fn new(filename: &str) -> Self {
-        let file = File::open(filename).unwrap();
-        let wav = WAV::new(file);
-        Self {
+    pub fn new(filename: &str) -> Result<Self, wav::Error> {
+        let file = File::open(filename)?;
+        let wav = WAV::new(file)?;
+        Ok(Self {
             wav: wav,
             pos: 0,
             src_type: PhantomData,
-        }
+        })
     }
 }
 impl<Ctx, Src> Element<(), Ctx> for WAVSource<Src>

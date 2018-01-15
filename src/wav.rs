@@ -1,5 +1,7 @@
 use std::io::prelude::*;
 use std::mem::transmute;
+use std::fmt;
+use std::error;
 
 use super::sample::*;
 
@@ -13,77 +15,78 @@ pub struct WAV {
     pub raw_data: Vec<u8>,
 }
 
+type Result<T> = ::std::result::Result<T, Error>;
+
 impl WAV {
-    pub fn new<R: Read>(mut inner: R) -> WAV {
+    pub fn new<R: Read>(mut inner: R) -> Result<WAV> {
         let mut riff = [0; 4];
-        inner.read_exact(&mut riff).unwrap();
+        inner.read_exact(&mut riff)?;
         if riff != [0x52, 0x49, 0x46, 0x46] {
-            panic!();
+            return Err(Error::WAVFormat);
         }
 
         let mut riff_size = [0; 4];
-        inner.read_exact(&mut riff_size).unwrap();
+        inner.read_exact(&mut riff_size)?;
         let riff_size = u32::from_le(unsafe { transmute(riff_size) });
         let _ = riff_size;
 
         let mut riff_type = [0; 4];
-        inner.read_exact(&mut riff_type).unwrap();
+        inner.read_exact(&mut riff_type)?;
         if riff_type != [0x57, 0x41, 0x56, 0x45] {
-            panic!();
+            return Err(Error::WAVFormat);
         }
 
         let mut fmt_id = [0; 4];
-        inner.read_exact(&mut fmt_id).unwrap();
+        inner.read_exact(&mut fmt_id)?;
         if fmt_id != [0x66, 0x6d, 0x74, 0x20] {
-            panic!();
+            return Err(Error::WAVFormat);
         }
 
         let mut fmt_size = [0; 4];
-        inner.read_exact(&mut fmt_size).unwrap();
+        inner.read_exact(&mut fmt_size)?;
         let fmt_size = u32::from_le(unsafe { transmute(fmt_size) });
         let _ = fmt_size;
 
         let mut fmt_format = [0; 2];
-        inner.read_exact(&mut fmt_format).unwrap();
+        inner.read_exact(&mut fmt_format)?;
         let fmt_format = u16::from_le(unsafe { transmute(fmt_format) });
 
         let mut fmt_channels = [0; 2];
-        inner.read_exact(&mut fmt_channels).unwrap();
+        inner.read_exact(&mut fmt_channels)?;
         let fmt_channels = u16::from_le(unsafe { transmute(fmt_channels) });
 
         let mut fmt_samplerate = [0; 4];
-        inner.read_exact(&mut fmt_samplerate).unwrap();
+        inner.read_exact(&mut fmt_samplerate)?;
         let fmt_samplerate = u32::from_le(unsafe { transmute(fmt_samplerate) });
 
         let mut fmt_bytepersec = [0; 4];
-        inner.read_exact(&mut fmt_bytepersec).unwrap();
+        inner.read_exact(&mut fmt_bytepersec)?;
         let fmt_bytepersec = u32::from_le(unsafe { transmute(fmt_bytepersec) });
 
         let mut fmt_blockalign = [0; 2];
-        inner.read_exact(&mut fmt_blockalign).unwrap();
+        inner.read_exact(&mut fmt_blockalign)?;
         let fmt_blockalign = u16::from_le(unsafe { transmute(fmt_blockalign) });
 
         let mut fmt_bitswidth = [0; 2];
-        inner.read_exact(&mut fmt_bitswidth).unwrap();
+        inner.read_exact(&mut fmt_bitswidth)?;
         let fmt_bitswidth = u16::from_le(unsafe { transmute(fmt_bitswidth) });
 
         let mut data_id = [0; 4];
-        inner.read_exact(&mut data_id).unwrap();
+        inner.read_exact(&mut data_id)?;
         if data_id != [0x64, 0x61, 0x74, 0x61] {
-            panic!();
+            return Err(Error::WAVFormat);
         }
 
         let mut data_size = [0; 4];
-        inner.read_exact(&mut data_size).unwrap();
+        inner.read_exact(&mut data_size)?;
         let data_size = u32::from_le(unsafe { transmute(data_size) });
 
         let mut data_data = Vec::new();
         inner
             .take(data_size as u64)
-            .read_to_end(&mut data_data)
-            .unwrap();
+            .read_to_end(&mut data_data)?;
 
-        WAV {
+        Ok(WAV {
             format: fmt_format,
             channels: fmt_channels,
             samplerate: fmt_samplerate,
@@ -91,7 +94,7 @@ impl WAV {
             blockalign: fmt_blockalign,
             bitswidth: fmt_bitswidth,
             raw_data: data_data,
-        }
+        })
     }
 
     pub fn get_sample_as<T>(&self, index: usize) -> Option<T>
@@ -138,5 +141,44 @@ impl WAV {
             }
             _ => panic!(),
         }
+    }
+}
+
+
+
+#[derive(Debug)]
+pub enum Error {
+    Io(::std::io::Error),
+    WAVFormat,
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Error::Io(ref err) => write!(f, "IO error: {}", err),
+            Error::WAVFormat => write!(f, "WAV format error"),
+        }
+    }
+
+}
+
+impl error::Error for Error {
+    fn description(&self) -> &str {
+        match *self {
+            Error::Io(ref err) => err.description(),
+            Error::WAVFormat => "WAV format error", 
+        }
+    }
+    fn cause(&self) -> Option<&error::Error> {
+        match *self {
+            Error::Io(ref err) => Some(err),
+            Error::WAVFormat => None,
+        }
+    }
+}
+
+impl From<::std::io::Error> for Error {
+    fn from(err: ::std::io::Error) -> Error {
+        Error::Io(err)
     }
 }
