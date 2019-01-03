@@ -1,7 +1,7 @@
+use std::error;
+use std::fmt;
 use std::io::prelude::*;
 use std::mem::transmute;
-use std::fmt;
-use std::error;
 
 use crate::sample::*;
 
@@ -82,9 +82,7 @@ impl WAV {
         let data_size = u32::from_le(unsafe { transmute(data_size) });
 
         let mut data_data = Vec::new();
-        inner
-            .take(data_size as u64)
-            .read_to_end(&mut data_data)?;
+        inner.take(data_size as u64).read_to_end(&mut data_data)?;
 
         Ok(WAV {
             format: fmt_format,
@@ -144,8 +142,6 @@ impl WAV {
     }
 }
 
-
-
 #[derive(Debug)]
 pub enum Error {
     Io(::std::io::Error),
@@ -159,14 +155,13 @@ impl fmt::Display for Error {
             Error::WAVFormat => write!(f, "WAV format error"),
         }
     }
-
 }
 
 impl error::Error for Error {
     fn description(&self) -> &str {
         match *self {
             Error::Io(ref err) => err.description(),
-            Error::WAVFormat => "WAV format error", 
+            Error::WAVFormat => "WAV format error",
         }
     }
     fn cause(&self) -> Option<&dyn error::Error> {

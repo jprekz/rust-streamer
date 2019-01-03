@@ -1,11 +1,11 @@
 use std::ops::Add;
 
-pub mod element;
-pub mod wav;
-pub mod sample;
 pub mod dsp;
+pub mod element;
 #[cfg(feature = "graphic")]
 pub mod graphic;
+pub mod sample;
+pub mod wav;
 
 // core traits
 
@@ -108,7 +108,7 @@ macro_rules! pipe {
     }}
 }
 
-// fork 
+// fork
 
 pub struct Fork<A, B> {
     a: A,

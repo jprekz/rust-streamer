@@ -8,10 +8,7 @@ pub struct Stereo<T: SampleType> {
 
 impl<T1: SampleType> Stereo<T1> {
     pub fn new(s: T1) -> Self {
-        Stereo {
-            l: s,
-            r: s,
-        }
+        Stereo { l: s, r: s }
     }
     pub fn map<T2: SampleType, F: Fn(T1) -> T2>(self, f: F) -> Stereo<T2> {
         Stereo {
@@ -30,8 +27,6 @@ impl<T: SampleType> Add for Stereo<T> {
         }
     }
 }
-
-
 
 #[derive(Copy, Clone, Debug)]
 pub struct Mono<T: SampleType>(pub T);
@@ -52,8 +47,6 @@ impl<T: SampleType> Add for Mono<T> {
     }
 }
 
-
-
 pub trait Sample: Copy {
     type Member: SampleType;
     fn to_stereo(self) -> Stereo<Self::Member>;
@@ -67,10 +60,7 @@ impl<T: SampleType> Sample for Stereo<T> {
         self
     }
     fn to_mono(self) -> Mono<Self::Member> {
-        Mono(
-            self.l / Self::Member::from_i32(2) +
-            self.r / Self::Member::from_i32(2)
-        )
+        Mono(self.l / Self::Member::from_i32(2) + self.r / Self::Member::from_i32(2))
     }
     fn from_raw(raw: &[Self::Member]) -> Option<Self> {
         if raw.len() != 2 {
@@ -101,8 +91,6 @@ impl<T: SampleType> Sample for Mono<T> {
         Some(Mono(raw[0]))
     }
 }
-
-
 
 pub trait FromSample<T> {
     fn from_sample(_: T) -> Self;
@@ -162,11 +150,9 @@ where
     }
 }
 
-
-
-pub trait SampleType
-    : Copy + Add<Output = Self> + Sub<Output = Self> + Mul<Output = Self> + Div<Output = Self>
-    {
+pub trait SampleType:
+    Copy + Add<Output = Self> + Sub<Output = Self> + Mul<Output = Self> + Div<Output = Self>
+{
     const MIN_LEVEL: Self;
     const MAX_LEVEL: Self;
     const REF_LEVEL: Self;
@@ -204,8 +190,6 @@ impl SampleType for f64 {
         i as Self
     }
 }
-
-
 
 pub trait FromSampleType<T: SampleType>: SampleType {
     fn from_sampletype(_: T) -> Self;

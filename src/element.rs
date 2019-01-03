@@ -1,7 +1,7 @@
-use crate::*;
-use crate::wav::*;
-use crate::sample::*;
 use crate::dsp::*;
+use crate::sample::*;
+use crate::wav::*;
+use crate::*;
 
 use std::fs::File;
 use std::marker::PhantomData;
@@ -64,8 +64,11 @@ where
     type Src = Src;
     fn next(&mut self, _sink: (), ctx: &Ctx) -> Src {
         self.pos += 1;
-        Mono::new((2.0 * std::f64::consts::PI * self.pos as f64 * self.freq / ctx.get_freq() as f64).sin())
-            .into_sample()
+        Mono::new(
+            (2.0 * std::f64::consts::PI * self.pos as f64 * self.freq / ctx.get_freq() as f64)
+                .sin(),
+        )
+        .into_sample()
     }
 }
 
@@ -121,7 +124,9 @@ where
         event_loop.play_stream(stream_id);
         event_loop.run(move |_stream_id, stream_data| {
             match stream_data {
-                StreamData::Output { buffer: UnknownTypeOutputBuffer::F32(mut buffer) } => {
+                StreamData::Output {
+                    buffer: UnknownTypeOutputBuffer::F32(mut buffer),
+                } => {
                     for sample in buffer.chunks_mut(format.channels as usize) {
                         let Stereo { l, r } = sink.next((), ctx).into_sample();
                         sample[0] = l;
@@ -235,20 +240,20 @@ impl Gain {
 }
 impl<T, Ctx> Element<Stereo<T>, Ctx> for Gain
 where
-    T: SampleType + IntoSampleType<f64>
+    T: SampleType + IntoSampleType<f64>,
 {
     type Src = Stereo<f64>;
     fn next(&mut self, sink: Stereo<T>, _ctx: &Ctx) -> Stereo<f64> {
-        sink.map(|x| {x.into_sampletype() * self.mag})
+        sink.map(|x| x.into_sampletype() * self.mag)
     }
 }
 impl<T, Ctx> Element<Mono<T>, Ctx> for Gain
 where
-    T: SampleType + IntoSampleType<f64>
+    T: SampleType + IntoSampleType<f64>,
 {
     type Src = Mono<f64>;
     fn next(&mut self, sink: Mono<T>, _ctx: &Ctx) -> Mono<f64> {
-        sink.map(|x| {x.into_sampletype() * self.mag})
+        sink.map(|x| x.into_sampletype() * self.mag)
     }
 }
 
@@ -460,8 +465,10 @@ where
 {
     type Src = T;
     fn init_with_ctx(&mut self, ctx: &Ctx) {
-        self.iir_l = BiQuadIIR::new_low_shelf_filter(ctx.get_freq() as f64, self.freq, self.q, self.gain);
-        self.iir_r = BiQuadIIR::new_low_shelf_filter(ctx.get_freq() as f64, self.freq, self.q, self.gain);
+        self.iir_l =
+            BiQuadIIR::new_low_shelf_filter(ctx.get_freq() as f64, self.freq, self.q, self.gain);
+        self.iir_r =
+            BiQuadIIR::new_low_shelf_filter(ctx.get_freq() as f64, self.freq, self.q, self.gain);
     }
     fn next(&mut self, sink: T, _ctx: &Ctx) -> T {
         let sink = sink.into_sample();
@@ -498,8 +505,10 @@ where
 {
     type Src = T;
     fn init_with_ctx(&mut self, ctx: &Ctx) {
-        self.iir_l = BiQuadIIR::new_high_shelf_filter(ctx.get_freq() as f64, self.freq, self.q, self.gain);
-        self.iir_r = BiQuadIIR::new_high_shelf_filter(ctx.get_freq() as f64, self.freq, self.q, self.gain);
+        self.iir_l =
+            BiQuadIIR::new_high_shelf_filter(ctx.get_freq() as f64, self.freq, self.q, self.gain);
+        self.iir_r =
+            BiQuadIIR::new_high_shelf_filter(ctx.get_freq() as f64, self.freq, self.q, self.gain);
     }
     fn next(&mut self, sink: T, _ctx: &Ctx) -> T {
         let sink = sink.into_sample();
@@ -536,8 +545,10 @@ where
 {
     type Src = T;
     fn init_with_ctx(&mut self, ctx: &Ctx) {
-        self.iir_l = BiQuadIIR::new_peaking_filter(ctx.get_freq() as f64, self.freq, self.bw, self.gain);
-        self.iir_r = BiQuadIIR::new_peaking_filter(ctx.get_freq() as f64, self.freq, self.bw, self.gain);
+        self.iir_l =
+            BiQuadIIR::new_peaking_filter(ctx.get_freq() as f64, self.freq, self.bw, self.gain);
+        self.iir_r =
+            BiQuadIIR::new_peaking_filter(ctx.get_freq() as f64, self.freq, self.bw, self.gain);
     }
     fn next(&mut self, sink: T, _ctx: &Ctx) -> T {
         let sink = sink.into_sample();

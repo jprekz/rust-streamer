@@ -63,14 +63,13 @@ pub fn apply_window<F: Fn(f64) -> f64>(mut data: Vec<f64>, f: F) -> Vec<f64> {
     data
 }
 
+#[rustfmt::skip]
 pub fn blackman_harris(x: f64) -> f64 {
     0.35875
         - 0.48829 * (2.0 * PI * x).cos()
         + 0.14128 * (4.0 * PI * x).cos()
         - 0.01168 * (6.0 * PI * x).cos()
 }
-
-
 
 pub struct BiQuadIIR {
     in1: f64,
@@ -119,6 +118,7 @@ impl BiQuadIIR {
     }
 
     pub fn next(&mut self, input: f64) -> f64 {
+        #[rustfmt::skip]
         let output = self.b0 / self.a0 * input
             + self.b1 / self.a0 * self.in1
             + self.b2 / self.a0 * self.in2
