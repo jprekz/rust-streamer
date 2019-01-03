@@ -88,8 +88,9 @@ where
 {
     type Src = Src;
     fn next(&mut self, _sink: (), _ctx: &Ctx) -> Src {
-        use self::rand::distributions::{IndependentSample, Range};
-        Mono::new(Range::new(-1f64, 1.).ind_sample(&mut rand::thread_rng())).into_sample()
+        use self::rand::prelude::*;
+        let mut rng = rand::thread_rng();
+        Mono::new(rng.gen_range(-1f64, 1.)).into_sample()
     }
 }
 
@@ -110,21 +111,21 @@ where
     {
         use self::cpal::*;
 
-        let endpoint = default_endpoint().expect("Failed to get default endpoint");
+        let event_loop = EventLoop::new();
+        let device = default_output_device().expect("no output device available");
         let format = Format {
-            channels: vec![ChannelPosition::FrontLeft, ChannelPosition::FrontRight],
-            samples_rate: SamplesRate(ctx.get_freq()),
+            channels: 2,
+            sample_rate: SampleRate(ctx.get_freq()),
             data_type: SampleFormat::F32,
         };
-        let event_loop = EventLoop::new();
-        let voice_id = event_loop
-            .build_voice(&endpoint, &format)
-            .expect("Failed to build voice");
-        event_loop.play(voice_id);
-        event_loop.run(move |_, buffer| {
-            match buffer {
-                UnknownTypeBuffer::F32(mut buffer) => {
-                    for sample in buffer.chunks_mut(format.channels.len()) {
+        let stream_id = event_loop
+            .build_output_stream(&device, &format)
+            .expect("Failed to build stream");
+        event_loop.play_stream(stream_id);
+        event_loop.run(move |_stream_id, stream_data| {
+            match stream_data {
+                StreamData::Output { buffer: UnknownTypeOutputBuffer::F32(mut buffer) } => {
+                    for sample in buffer.chunks_mut(format.channels as usize) {
                         let Stereo { l, r } = sink.next((), ctx).into_sample();
                         sample[0] = l;
                         sample[1] = r;

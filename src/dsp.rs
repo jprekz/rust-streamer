@@ -1,6 +1,6 @@
-extern crate num;
+extern crate num_complex;
 
-use self::num::complex::*;
+use self::num_complex::Complex64;
 
 use std::f64::consts::PI;
 
