@@ -3,7 +3,7 @@ use std::mem::transmute;
 use std::fmt;
 use std::error;
 
-use super::sample::*;
+use crate::sample::*;
 
 pub struct WAV {
     pub format: u16,
@@ -153,7 +153,7 @@ pub enum Error {
 }
 
 impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             Error::Io(ref err) => write!(f, "IO error: {}", err),
             Error::WAVFormat => write!(f, "WAV format error"),
@@ -169,7 +169,7 @@ impl error::Error for Error {
             Error::WAVFormat => "WAV format error", 
         }
     }
-    fn cause(&self) -> Option<&error::Error> {
+    fn cause(&self) -> Option<&dyn error::Error> {
         match *self {
             Error::Io(ref err) => Some(err),
             Error::WAVFormat => None,

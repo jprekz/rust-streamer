@@ -1,4 +1,3 @@
-extern crate rust_streamer;
 use rust_streamer::*;
 use rust_streamer::element::*;
 use rust_streamer::sample::*;

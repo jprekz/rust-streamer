@@ -1,9 +1,8 @@
-extern crate piston_window;
-use self::piston_window::*;
+use piston_window::*;
 
-use super::*;
-use super::dsp::*;
-use super::sample::*;
+use crate::*;
+use crate::dsp::*;
+use crate::sample::*;
 
 use std::sync::{Arc, Mutex};
 

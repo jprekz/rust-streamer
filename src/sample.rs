@@ -105,7 +105,7 @@ impl<T: SampleType> Sample for Mono<T> {
 
 
 pub trait FromSample<T> {
-    fn from_sample(T) -> Self;
+    fn from_sample(_: T) -> Self;
 }
 
 /// should not directly implement this trait.
@@ -208,7 +208,7 @@ impl SampleType for f64 {
 
 
 pub trait FromSampleType<T: SampleType>: SampleType {
-    fn from_sampletype(T) -> Self;
+    fn from_sampletype(_: T) -> Self;
 }
 
 /// should not directly implement this trait.

@@ -1,10 +1,7 @@
-extern crate cpal;
-extern crate rand;
-
-use super::*;
-use super::wav::*;
-use super::sample::*;
-use super::dsp::*;
+use crate::*;
+use crate::wav::*;
+use crate::sample::*;
+use crate::dsp::*;
 
 use std::fs::File;
 use std::marker::PhantomData;
@@ -88,7 +85,7 @@ where
 {
     type Src = Src;
     fn next(&mut self, _sink: (), _ctx: &Ctx) -> Src {
-        use self::rand::prelude::*;
+        use rand::prelude::*;
         let mut rng = rand::thread_rng();
         Mono::new(rng.gen_range(-1f64, 1.)).into_sample()
     }
@@ -109,7 +106,7 @@ where
     where
         E: Element<(), Ctx, Src = S> + Send,
     {
-        use self::cpal::*;
+        use cpal::*;
 
         let event_loop = EventLoop::new();
         let device = default_output_device().expect("no output device available");
