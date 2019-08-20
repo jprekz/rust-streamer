@@ -2,7 +2,7 @@ use num_complex::Complex64;
 
 use std::f64::consts::PI;
 
-pub fn fft(samples: Vec<f64>) -> Vec<f64> {
+pub fn fft(samples: &[f64]) -> Vec<f64> {
     let stages = (samples.len() as f64).log2().floor() as u32;
     let len = 2i32.pow(stages) as usize;
 
@@ -55,7 +55,7 @@ pub fn fft(samples: Vec<f64>) -> Vec<f64> {
     x.into_iter().map(|a| a.norm()).collect()
 }
 
-pub fn apply_window<F: Fn(f64) -> f64>(mut data: Vec<f64>, f: F) -> Vec<f64> {
+pub fn apply_window(mut data: Vec<f64>, f: impl Fn(f64) -> f64) -> Vec<f64> {
     let len = data.len();
     for i in 0..len {
         data[i] = data[i] * f(i as f64 / len as f64);

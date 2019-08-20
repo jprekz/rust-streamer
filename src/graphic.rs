@@ -93,7 +93,7 @@ impl Spectrum {
                 window.draw_2d(&event, |context, graphics| {
                     let data = { data_move.lock().unwrap().clone() };
                     //let data = apply_window(data, blackman_harris);
-                    let data = fft(data);
+                    let data = fft(&data);
                     clear(WHITE, graphics);
                     for i in 1..len / 2 {
                         let d = data[i] / len as f64 * 2.0;
