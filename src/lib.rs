@@ -243,20 +243,3 @@ impl FreqCtx for DefaultContext {
         }
     }
 }
-
-// other
-
-pub trait FixedQueue {
-    type T;
-    fn push(&mut self, item: Self::T);
-}
-impl<T: Copy> FixedQueue for [T] {
-    type T = T;
-    fn push(&mut self, item: T) {
-        let len = self.len();
-        for i in 0..len - 1 {
-            self[i] = self[i + 1];
-        }
-        self[len - 1] = item;
-    }
-}
