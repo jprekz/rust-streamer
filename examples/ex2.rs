@@ -1,7 +1,7 @@
-use rust_streamer::*;
 use rust_streamer::element::*;
-use rust_streamer::sample::*;
 use rust_streamer::graphic::*;
+use rust_streamer::sample::*;
+use rust_streamer::*;
 
 fn main() {
     let p = pipe!(
@@ -12,5 +12,5 @@ fn main() {
         DefaultSink::new()
     );
 
-    p.start(&Context::new(44100));
+    p.start(Context::new(44100));
 }

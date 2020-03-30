@@ -318,7 +318,7 @@ where
     T: IntoSample<Stereo<f64>> + FromSample<Stereo<f64>>,
 {
     type Src = T;
-    fn init_with_ctx(&mut self, ctx: &Ctx) {
+    fn start(&mut self, ctx: &Ctx) {
         self.iir_l = BiQuadIIR::new_low_pass_filter(ctx.get_freq() as f64, self.freq, self.q);
         self.iir_r = BiQuadIIR::new_low_pass_filter(ctx.get_freq() as f64, self.freq, self.q);
     }
@@ -354,7 +354,7 @@ where
     T: IntoSample<Stereo<f64>> + FromSample<Stereo<f64>>,
 {
     type Src = T;
-    fn init_with_ctx(&mut self, ctx: &Ctx) {
+    fn start(&mut self, ctx: &Ctx) {
         self.iir_l = BiQuadIIR::new_high_pass_filter(ctx.get_freq() as f64, self.freq, self.q);
         self.iir_r = BiQuadIIR::new_high_pass_filter(ctx.get_freq() as f64, self.freq, self.q);
     }
@@ -390,7 +390,7 @@ where
     T: IntoSample<Stereo<f64>> + FromSample<Stereo<f64>>,
 {
     type Src = T;
-    fn init_with_ctx(&mut self, ctx: &Ctx) {
+    fn start(&mut self, ctx: &Ctx) {
         self.iir_l = BiQuadIIR::new_band_pass_filter(ctx.get_freq() as f64, self.freq, self.bw);
         self.iir_r = BiQuadIIR::new_band_pass_filter(ctx.get_freq() as f64, self.freq, self.bw);
     }
@@ -426,7 +426,7 @@ where
     T: IntoSample<Stereo<f64>> + FromSample<Stereo<f64>>,
 {
     type Src = T;
-    fn init_with_ctx(&mut self, ctx: &Ctx) {
+    fn start(&mut self, ctx: &Ctx) {
         self.iir_l = BiQuadIIR::new_notch_filter(ctx.get_freq() as f64, self.freq, self.bw);
         self.iir_r = BiQuadIIR::new_notch_filter(ctx.get_freq() as f64, self.freq, self.bw);
     }
@@ -464,7 +464,7 @@ where
     T: IntoSample<Stereo<f64>> + FromSample<Stereo<f64>>,
 {
     type Src = T;
-    fn init_with_ctx(&mut self, ctx: &Ctx) {
+    fn start(&mut self, ctx: &Ctx) {
         self.iir_l =
             BiQuadIIR::new_low_shelf_filter(ctx.get_freq() as f64, self.freq, self.q, self.gain);
         self.iir_r =
@@ -504,7 +504,7 @@ where
     T: IntoSample<Stereo<f64>> + FromSample<Stereo<f64>>,
 {
     type Src = T;
-    fn init_with_ctx(&mut self, ctx: &Ctx) {
+    fn start(&mut self, ctx: &Ctx) {
         self.iir_l =
             BiQuadIIR::new_high_shelf_filter(ctx.get_freq() as f64, self.freq, self.q, self.gain);
         self.iir_r =
@@ -544,7 +544,7 @@ where
     T: IntoSample<Stereo<f64>> + FromSample<Stereo<f64>>,
 {
     type Src = T;
-    fn init_with_ctx(&mut self, ctx: &Ctx) {
+    fn start(&mut self, ctx: &Ctx) {
         self.iir_l =
             BiQuadIIR::new_peaking_filter(ctx.get_freq() as f64, self.freq, self.bw, self.gain);
         self.iir_r =
@@ -582,7 +582,7 @@ where
     T: IntoSample<Stereo<f64>> + FromSample<Stereo<f64>>,
 {
     type Src = T;
-    fn init_with_ctx(&mut self, ctx: &Ctx) {
+    fn start(&mut self, ctx: &Ctx) {
         self.iir_l = BiQuadIIR::new_all_pass_filter(ctx.get_freq() as f64, self.freq, self.q);
         self.iir_r = BiQuadIIR::new_all_pass_filter(ctx.get_freq() as f64, self.freq, self.q);
     }

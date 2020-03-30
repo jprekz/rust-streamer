@@ -11,10 +11,12 @@ pub mod wav;
 
 pub trait Element<Sink, Ctx> {
     type Src;
+    fn init(&mut self, _ctx: &mut Ctx) {}
+    fn start(&mut self, _ctx: &Ctx) {}
     fn next(&mut self, sink: Sink, ctx: &Ctx) -> Self::Src;
-    fn init_with_ctx(&mut self, _ctx: &Ctx) {}
 }
 pub trait PullElement<Sink, Ctx> {
+    fn init(&mut self, _ctx: &mut Ctx) {}
     fn start<E>(&mut self, sink: E, ctx: &Ctx)
     where
         E: Element<(), Ctx, Src = Sink> + Send;
@@ -22,19 +24,20 @@ pub trait PullElement<Sink, Ctx> {
 }
 pub trait PushElement<Ctx> {
     type Src;
+    fn init(&mut self, _ctx: &mut Ctx) {}
     fn start<E>(&mut self, src: E, ctx: &Ctx)
     where
         E: Element<Self::Src, Ctx, Src = ()> + Send;
     fn stop(&mut self);
 }
 pub trait Pipeline<Ctx> {
-    fn start(self, ctx: &Ctx);
+    fn start(self, ctx: Ctx);
 }
 pub trait SinkPipeline<Ctx> {
-    fn start(self, ctx: &Ctx);
+    fn start(self, ctx: Ctx);
 }
 pub trait SrcPipeline<Ctx> {
-    fn start(self, ctx: &Ctx);
+    fn start(self, ctx: Ctx);
 }
 
 // pipe
@@ -54,22 +57,27 @@ where
     B: Element<A::Src, Ctx>,
 {
     type Src = B::Src;
+    fn init(&mut self, ctx: &mut Ctx) {
+        self.a.init(ctx);
+        self.b.init(ctx);
+    }
+    fn start(&mut self, ctx: &Ctx) {
+        self.a.start(ctx);
+        self.b.start(ctx);
+    }
     fn next(&mut self, sink: Sink, ctx: &Ctx) -> Self::Src {
         self.b.next(self.a.next(sink, ctx), ctx)
-    }
-    fn init_with_ctx(&mut self, ctx: &Ctx) {
-        self.a.init_with_ctx(ctx);
-        self.b.init_with_ctx(ctx);
     }
 }
 impl<A, B, Ctx> Pipeline<Ctx> for Pipe<A, B>
 where
     Self: Element<(), Ctx, Src = ()>,
 {
-    fn start(mut self, ctx: &Ctx) {
-        self.init_with_ctx(ctx);
+    fn start(mut self, mut ctx: Ctx) {
+        self.init(&mut ctx);
+        Element::start(&mut self, &ctx);
         loop {
-            self.next((), ctx);
+            self.next((), &ctx);
         }
     }
 }
@@ -78,9 +86,11 @@ where
     A: Element<(), Ctx> + Send,
     B: PullElement<A::Src, Ctx>,
 {
-    fn start(mut self, ctx: &Ctx) {
-        self.a.init_with_ctx(ctx);
-        self.b.start(self.a, ctx);
+    fn start(mut self, mut ctx: Ctx) {
+        self.a.init(&mut ctx);
+        self.b.init(&mut ctx);
+        self.a.start(&ctx);
+        self.b.start(self.a, &ctx);
     }
 }
 impl<A, B, Ctx> SrcPipeline<Ctx> for Pipe<A, B>
@@ -88,9 +98,11 @@ where
     A: PushElement<Ctx>,
     B: Element<A::Src, Ctx, Src = ()> + Send,
 {
-    fn start(mut self, ctx: &Ctx) {
-        self.b.init_with_ctx(ctx);
-        self.a.start(self.b, ctx);
+    fn start(mut self, mut ctx: Ctx) {
+        self.a.init(&mut ctx);
+        self.b.init(&mut ctx);
+        self.b.start(&ctx);
+        self.a.start(self.b, &ctx);
     }
 }
 
@@ -127,12 +139,16 @@ where
     Sink: Copy,
 {
     type Src = <A::Src as Add<B::Src>>::Output;
+    fn init(&mut self, ctx: &mut Ctx) {
+        self.a.init(ctx);
+        self.b.init(ctx);
+    }
+    fn start(&mut self, ctx: &Ctx) {
+        self.a.start(ctx);
+        self.b.start(ctx);
+    }
     fn next(&mut self, sink: Sink, ctx: &Ctx) -> Self::Src {
         self.a.next(sink, ctx) + self.b.next(sink, ctx)
-    }
-    fn init_with_ctx(&mut self, ctx: &Ctx) {
-        self.a.init_with_ctx(ctx);
-        self.b.init_with_ctx(ctx);
     }
 }
 
