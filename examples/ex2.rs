@@ -1,3 +1,4 @@
+use rust_streamer::context::DefaultContext;
 use rust_streamer::element::*;
 use rust_streamer::graphic::*;
 use rust_streamer::sample::*;

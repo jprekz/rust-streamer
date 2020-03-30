@@ -1,3 +1,4 @@
+use crate::context::FreqCtx;
 use crate::dsp::*;
 use crate::sample::*;
 use crate::wav::*;
