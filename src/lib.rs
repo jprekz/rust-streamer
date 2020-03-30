@@ -18,17 +18,13 @@ pub trait Element<Sink, Ctx> {
 }
 pub trait PullElement<Sink, Ctx> {
     fn init(&mut self, _ctx: &mut Ctx) {}
-    fn start<E>(&mut self, sink: E, ctx: &Ctx)
-    where
-        E: Element<(), Ctx, Src = Sink> + Send;
+    fn start(&mut self, sink: impl Element<(), Ctx, Src = Sink> + Send, ctx: &Ctx);
     fn stop(&mut self);
 }
 pub trait PushElement<Ctx> {
     type Src;
     fn init(&mut self, _ctx: &mut Ctx) {}
-    fn start<E>(&mut self, src: E, ctx: &Ctx)
-    where
-        E: Element<Self::Src, Ctx, Src = ()> + Send;
+    fn start(&mut self, src: impl Element<Self::Src, Ctx, Src = ()> + Send, ctx: &Ctx);
     fn stop(&mut self);
 }
 pub trait Pipeline<Ctx: Context> {

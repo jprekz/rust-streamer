@@ -119,10 +119,7 @@ where
         ctx.set_preferred_freq(&[format.sample_rate.0]);
     }
 
-    fn start<E>(&mut self, mut sink: E, ctx: &Ctx)
-    where
-        E: Element<(), Ctx, Src = S> + Send,
-    {
+    fn start(&mut self, mut sink: impl Element<(), Ctx, Src = S> + Send, ctx: &Ctx) {
         use cpal::*;
 
         let event_loop = EventLoop::new();
