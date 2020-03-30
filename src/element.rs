@@ -26,10 +26,14 @@ impl<Src> WAVSource<Src> {
 }
 impl<Ctx, Src> Element<(), Ctx> for WAVSource<Src>
 where
+    Ctx: FreqCtx,
     Src: Sample,
     Src::Member: FromSampleType<i16>,
 {
     type Src = Src;
+    fn init(&mut self, ctx: &mut Ctx) {
+        ctx.set_supported_freq(&[self.wav.samplerate]);
+    }
     fn next(&mut self, _sink: (), _ctx: &Ctx) -> Src {
         self.pos += 1;
         match self.wav.get_sample_as::<Src>(self.pos - 1) {
@@ -105,6 +109,16 @@ where
     S: IntoSample<Stereo<f32>>,
     Ctx: FreqCtx + Sync,
 {
+    fn init(&mut self, ctx: &mut Ctx) {
+        use cpal::*;
+
+        let device = default_output_device().expect("no output device available");
+        let format = device
+            .default_output_format()
+            .expect("no output device available");
+        ctx.set_preferred_freq(&[format.sample_rate.0]);
+    }
+
     fn start<E>(&mut self, mut sink: E, ctx: &Ctx)
     where
         E: Element<(), Ctx, Src = S> + Send,

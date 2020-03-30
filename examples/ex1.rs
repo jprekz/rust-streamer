@@ -8,5 +8,5 @@ fn main() {
 
     let p = pipe!(source, sink);
 
-    p.start(Context::new(44100));
+    p.start(DefaultContext::new());
 }

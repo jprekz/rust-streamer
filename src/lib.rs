@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::ops::Add;
 
 pub mod dsp;
@@ -30,13 +31,13 @@ pub trait PushElement<Ctx> {
         E: Element<Self::Src, Ctx, Src = ()> + Send;
     fn stop(&mut self);
 }
-pub trait Pipeline<Ctx> {
+pub trait Pipeline<Ctx: Context> {
     fn start(self, ctx: Ctx);
 }
-pub trait SinkPipeline<Ctx> {
+pub trait SinkPipeline<Ctx: Context> {
     fn start(self, ctx: Ctx);
 }
-pub trait SrcPipeline<Ctx> {
+pub trait SrcPipeline<Ctx: Context> {
     fn start(self, ctx: Ctx);
 }
 
@@ -69,19 +70,20 @@ where
         self.b.next(self.a.next(sink, ctx), ctx)
     }
 }
-impl<A, B, Ctx> Pipeline<Ctx> for Pipe<A, B>
+impl<A, B, Ctx: Context> Pipeline<Ctx> for Pipe<A, B>
 where
     Self: Element<(), Ctx, Src = ()>,
 {
     fn start(mut self, mut ctx: Ctx) {
         self.init(&mut ctx);
+        let ctx = ctx.build().unwrap();
         Element::start(&mut self, &ctx);
         loop {
             self.next((), &ctx);
         }
     }
 }
-impl<A, B, Ctx> SinkPipeline<Ctx> for Pipe<A, B>
+impl<A, B, Ctx: Context> SinkPipeline<Ctx> for Pipe<A, B>
 where
     A: Element<(), Ctx> + Send,
     B: PullElement<A::Src, Ctx>,
@@ -89,11 +91,12 @@ where
     fn start(mut self, mut ctx: Ctx) {
         self.a.init(&mut ctx);
         self.b.init(&mut ctx);
+        let ctx = ctx.build().unwrap();
         self.a.start(&ctx);
         self.b.start(self.a, &ctx);
     }
 }
-impl<A, B, Ctx> SrcPipeline<Ctx> for Pipe<A, B>
+impl<A, B, Ctx: Context> SrcPipeline<Ctx> for Pipe<A, B>
 where
     A: PushElement<Ctx>,
     B: Element<A::Src, Ctx, Src = ()> + Send,
@@ -101,6 +104,7 @@ where
     fn start(mut self, mut ctx: Ctx) {
         self.a.init(&mut ctx);
         self.b.init(&mut ctx);
+        let ctx = ctx.build().unwrap();
         self.b.start(&ctx);
         self.a.start(self.b, &ctx);
     }
@@ -168,20 +172,79 @@ macro_rules! fork {
 
 // context
 
-pub struct Context {
-    freq: u32,
+pub trait Context: Sized {
+    fn build(self) -> Result<Self, ()>;
 }
-impl Context {
-    pub fn new(freq: u32) -> Self {
-        Self { freq: freq }
+
+pub struct DefaultContext {
+    freq: Option<u32>,
+    supported_freq: Option<HashSet<u32>>,
+    preferred_freq: HashSet<u32>,
+}
+impl DefaultContext {
+    pub fn new() -> Self {
+        DefaultContext {
+            freq: None,
+            supported_freq: None,
+            preferred_freq: HashSet::new(),
+        }
+    }
+    pub fn freq(self, freq: u32) -> Self {
+        DefaultContext {
+            freq: Some(freq),
+            ..self
+        }
     }
 }
+impl Context for DefaultContext {
+    fn build(mut self) -> Result<Self, ()> {
+        self.decide_freq()?;
+        Ok(self)
+    }
+}
+
 pub trait FreqCtx {
     fn get_freq(&self) -> u32;
+    fn set_supported_freq(&mut self, supported_freq: &[u32]);
+    fn set_preferred_freq(&mut self, preferred_freq: &[u32]);
+    fn decide_freq(&mut self) -> Result<u32, ()>;
 }
-impl FreqCtx for Context {
+impl FreqCtx for DefaultContext {
     fn get_freq(&self) -> u32 {
-        self.freq
+        self.freq.unwrap()
+    }
+    fn set_supported_freq(&mut self, supported_freq: &[u32]) {
+        let supported_freq = supported_freq.iter().copied().collect();
+        if let Some(ref mut self_supported_freq) = self.supported_freq {
+            self_supported_freq.intersection(&supported_freq);
+        } else {
+            self.supported_freq = Some(supported_freq);
+        }
+    }
+    fn set_preferred_freq(&mut self, preferred_freq: &[u32]) {
+        self.preferred_freq.extend(preferred_freq.iter());
+    }
+    fn decide_freq(&mut self) -> Result<u32, ()> {
+        if let Some(freq) = self.freq {
+            return Ok(freq);
+        }
+        if let Some(supported_freq) = &self.supported_freq {
+            self.preferred_freq.intersection(supported_freq);
+            if let Some(max) = self.preferred_freq.iter().copied().max() {
+                self.freq = Some(max);
+            } else if let Some(max) = supported_freq.iter().copied().max() {
+                self.freq = Some(max);
+            }
+        } else {
+            if let Some(max) = self.preferred_freq.iter().copied().max() {
+                self.freq = Some(max);
+            }
+        }
+        if let Some(freq) = self.freq {
+            return Ok(freq);
+        } else {
+            return Err(());
+        }
     }
 }
 

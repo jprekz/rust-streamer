@@ -12,5 +12,5 @@ fn main() {
         DefaultSink::new()
     );
 
-    p.start(Context::new(44100));
+    p.start(DefaultContext::new());
 }
